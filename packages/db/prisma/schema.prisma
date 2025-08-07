@@ -1,0 +1,24 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model PodcastEpisode {
+  id          Int                @id @default(autoincrement())
+  title       String
+  url         String
+  transcripts TranscriptSegment[]
+}
+
+model TranscriptSegment {
+  id        Int             @id @default(autoincrement())
+  episode   PodcastEpisode  @relation(fields: [episodeId], references: [id])
+  episodeId Int
+  text      String
+  start     Float
+  end       Float
+} 

@@ -1,0 +1,74 @@
+📘 プロジェクト仕様書（ポッドキャスト検索Bot＋管理ツール）
+
+🎯 プロジェクト概要
+特定のポッドキャスト番組（例：「奇奇怪怪」）のエピソードの中から、
+ユーザーが Discord で質問した話題（例：「UMAの起源について話してた回」）に該当する話数やURLを、AIで検索・提示する。
+
+🧱 技術スタック
+- バックエンド: Hono（TypeScript）
+- フロントエンド（管理画面）: React + Vite + shadcn/ui + Tailwind CSS
+- データベース: PostgreSQL（Render上）
+- ベクトルDB: Qdrant（ローカル or 外部）
+- Embedding: OpenAI Embedding API（text-embedding-3-small など）
+- 音声文字起こし: Whisper（ローカルCLIで実行、結果をAPI経由で登録）
+- デプロイ: Render（Dockerベース）
+- Discord連携: discord.js
+
+📁 ディレクトリ構成（例）
+project-root/
+├── apps/
+│   ├── api/             # Hono API
+│   └── admin-ui/        # アドミン（Vite + React）
+├── packages/
+│   └── db/              # Prismaスキーマ（共通）
+├── docker-compose.yml
+├── Dockerfile
+├── .env
+└── render.yaml
+
+🔌 各コンポーネントの役割
+1. Hono API（apps/api）
+- /search?q=... → Qdrant検索 → エピソード候補返却
+- /transcripts/:id → 話数ごとの文字起こし取得
+- /episodes → エピソード一覧
+- Embedding登録・更新用の管理系エンドポイント
+
+2. 管理UI（apps/admin-ui）
+- クエリ入力欄
+- 話数・検索結果の表示
+- 内部的に /search を叩く仮想チャット風UI
+- shadcn/ui コンポーネントで実装（Button, Card, Inputなど）
+
+3. データベース（PostgreSQL）
+- PodcastEpisode：エピソード情報
+- TranscriptSegment：話数内の時間単位の文字起こし（ベクトル化対象）
+- SearchLog：検索履歴（任意）
+
+4. ベクトルDB（Qdrant）
+- transcript_segments コレクションに埋め込み情報を保存
+- 検索時は qdrant.search({ vector, filter }) で近似探索
+
+5. WhisperローカルCLI
+- .mp3 or .m4a ファイルを文字起こし
+- 出力JSONまたはtxtを /transcripts APIにPOSTして登録
+- Embeddingも登録処理に含める
+
+6. Discord Bot
+- /search コマンドを実装
+- Hono APIにクエリを送り、結果をチャットに返信
+- 対象チャンネル制限可（非公開利用）
+
+🔐 運用ポリシーと配慮
+- データは全文保持するが、非公開コミュニティ内のみで利用
+- Podcast運営者の許諾を取得する（構築後に連絡）
+- 公開APIとしては提供せず、BOTまたは管理UIからのみアクセス
+
+🚀 デプロイ戦略
+- 本番: Render（Docker + render.yaml で API & admin-ui を構成）
+- ローカル: docker-composeで PostgreSQL / Qdrant / Hono を一括起動
+- GitHub連携: mainブランチ更新 → Render自動デプロイ
+
+🗂 今後の拡張アイデア（任意）
+- エピソード再生埋め込み or ポッドキャストプレイヤー統合
+- 検索精度向上（全文 × セグメント両対応）
+- ユーザーごとの利用ログ or フィードバック機能

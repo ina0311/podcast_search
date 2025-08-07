@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@hono/node-server": "^0.0.2",
+    "hono": "^3.12.0",
+    "dotenv": "^16.3.1",
+    "@prisma/client": "^5.10.2",
+    "@qdrant/js-client-rest": "^1.7.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.3.3",
+    "prisma": "^5.10.2"
+  }
+} 
