@@ -1,0 +1,13 @@
+{
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "API dev",
+      "command": "npm run dev:api"
+    },
+    {
+      "name": "Admin UI",
+      "command": "npm run dev:admin-ui"
+    }
+  ]
+}
