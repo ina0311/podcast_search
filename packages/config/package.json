@@ -1,0 +1,21 @@
+{
+  "name": "@podcast_search/config",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "tsup": "^8.5.0"
+  }
+}
+
+
