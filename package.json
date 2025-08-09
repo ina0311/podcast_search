@@ -8,14 +8,27 @@
   ],
   "scripts": {
     "dev": "npm-run-all -p dev:*",
-    "dev:api": "npm --workspace apps/api run dev",
-    "dev:admin-ui": "npm --workspace apps/admin-ui run dev",
+    "dev:api": "pnpm -C apps/api dev",
+    "dev:admin-ui": "pnpm -C apps/admin-ui dev",
     "build": "npm-run-all build:*",
-    "build:api": "npm --workspace apps/api run build",
-    "build:admin-ui": "npm --workspace apps/admin-ui run build"
+    "build:packages": "pnpm -C packages/db build && pnpm -C packages/config build && pnpm -C packages/search-core build",
+    "build:api": "pnpm -C apps/api build",
+    "build:admin-ui": "pnpm -C apps/admin-ui build",
+    "typecheck": "tsc -b -v --noEmit",
+    "typecheck:packages": "pnpm -C packages/db -s typecheck && pnpm -C packages/config -s typecheck && pnpm -C packages/search-core -s typecheck",
+    "typecheck:api": "pnpm -C apps/api -s typecheck",
+    "typecheck:admin-ui": "pnpm -C apps/admin-ui -s typecheck"
   },
   "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.4",
     "npm-run-all": "^4.1.5",
-    "@types/node": "^20.11.19"
-  }
-} 
+    "prettier": "^3.6.2"
+  },
+  "packageManager": "pnpm@10.14.0"
+}

@@ -1,14 +1,11 @@
 {
-  "compilerOptions": {
-    "target": "es2021",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "rootDir": ".",
-    "outDir": "dist"
-  }
-} 
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    { "path": "apps/admin-ui/tsconfig.json" },
+    { "path": "apps/api/tsconfig.json" },
+    { "path": "packages/db/tsconfig.json" },
+    { "path": "packages/config/tsconfig.json" },
+    { "path": "packages/search-core/tsconfig.json" }
+  ]
+}
