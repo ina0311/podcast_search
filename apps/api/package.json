@@ -5,22 +5,29 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
+    "build": "tsup src/index.ts --format esm,cjs --out-dir dist --tsconfig tsconfig.json",
     "start": "node dist/index.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@hono/node-server": "^0.0.2",
-    "hono": "^3.12.0",
-    "dotenv": "^16.3.1",
-    "@prisma/client": "^5.10.2",
-    "@qdrant/js-client-rest": "^1.7.1"
+    "@hono/node-server": "^1.18.1",
+    "@podcast_search/config": "workspace:*",
+    "@podcast_search/db": "workspace:*",
+    "@podcast_search/search-core": "workspace:*",
+    "@prisma/client": "^6.13.0",
+    "@qdrant/js-client-rest": "^1.15.0",
+    "compression": "^1.8.1",
+    "dotenv": "^17.2.1",
+    "helmet": "^8.1.0",
+    "hono": "^4.8.12",
+    "openai": "^5.12.2",
+    "pino": "^9.8.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "tsx": "^4.7.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.3.3",
-    "prisma": "^5.10.2"
+    "prisma": "^6.13.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
   }
-} 
+}
