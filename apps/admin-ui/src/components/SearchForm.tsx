@@ -1,7 +1,13 @@
 import React, { useState, FormEvent } from 'react';
 
+interface Episode {
+  id: number;
+  title: string;
+  url: string;
+}
+
 type Props = {
-  onResults: (episodes: any[]) => void;
+  onResults: (episodes: Episode[]) => void;
 };
 
 export default function SearchForm({ onResults }: Props) {
