@@ -1,14 +1,13 @@
 {
-  "install": "npm install",
+  "install": "corepack enable && corepack prepare pnpm@10.14.0 --activate && pnpm install --frozen-lockfile",
   "terminals": [
     {
       "name": "API dev",
-      "command": "npm run dev:api"
+      "command": "pnpm run dev:api"
     },
     {
       "name": "Admin UI",
-      "command": "npm run dev:admin-ui"
+      "command": "pnpm run dev:admin-ui"
     }
   ]
 }
-
