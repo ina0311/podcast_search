@@ -5,13 +5,14 @@
 ユーザーが Discord で質問した話題（例：「UMAの起源について話してた回」）に該当する話数やURLを、AIで検索・提示する。
 
 🧱 技術スタック
-- バックエンド: Hono（TypeScript）
-- フロントエンド（管理画面）: React + Vite + shadcn/ui + Tailwind CSS
-- データベース: PostgreSQL（Render上）
-- ベクトルDB: Qdrant（ローカル or 外部）
-- Embedding: OpenAI Embedding API（text-embedding-3-small など）
-- 音声文字起こし: Whisper（ローカルCLIで実行、結果をAPI経由で登録）
-- デプロイ: Render（Dockerベース）
+- バックエンド: Hono（TypeScript） + Zod + Prisma + Pino
+- フロントエンド（管理画面）: React 18 + Vite + Tailwind CSS + DaisyUI + Radix UI + TanStack Query
+- パッケージ管理 / モノレポ: pnpm Workspaces
+- データベース: PostgreSQL 16 (Docker) + Prisma ORM
+- ベクトルDB: Qdrant (Docker)
+- Embedding: OpenAI Embedding API（text-embedding-3-small）
+- 音声文字起こし: Whisper（CLI）
+- デプロイ: Render（Docker） / ローカル docker-compose
 - Discord連携: discord.js
 
 📁 ディレクトリ構成（例）

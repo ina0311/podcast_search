@@ -17,7 +17,12 @@
     "typecheck": "tsc -b -v --noEmit",
     "typecheck:packages": "pnpm -C packages/db -s typecheck && pnpm -C packages/config -s typecheck && pnpm -C packages/search-core -s typecheck",
     "typecheck:api": "pnpm -C apps/api -s typecheck",
-    "typecheck:admin-ui": "pnpm -C apps/admin-ui -s typecheck"
+    "typecheck:admin-ui": "pnpm -C apps/admin-ui -s typecheck",
+    "db:migrate": "pnpm -C packages/db run prisma:migrate",
+    "db:generate": "pnpm -C packages/db run prisma:generate",
+    "db:deploy": "pnpm -C packages/db run prisma:deploy",
+    "db:format": "pnpm -C packages/db run prisma:format",
+    "db:push": "pnpm -C packages/db exec prisma db push"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

@@ -1,0 +1,180 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EpisodeStatus {
+  PUBLISHED
+  PRIVATE
+  REMOVED
+  DRAFT
+}
+
+enum Provider {
+  RSS
+  YOUTUBE
+  APPLE
+  SPOTIFY
+}
+
+model PodcastSource {
+  id         Int      @id @default(autoincrement())
+  podcastId  Int
+  podcast    Podcast  @relation(fields: [podcastId], references: [id])
+  provider   Provider
+  externalId String?
+  priority   Int      @default(1)
+  isEnabled  Boolean  @default(true)
+  config     Json?
+
+  @@unique([podcastId, provider])
+  @@index([podcastId, priority])
+}
+
+model Podcast {
+  id         Int               @id @default(autoincrement())
+  publicId   String            @unique @default(uuid()) @db.Uuid
+  title      String
+  rssUrl     String?
+  author     String?
+  language   String?
+  imageUrl   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  episodes   PodcastEpisode[]
+  sources    PodcastSource[]
+}
+
+model PodcastEpisode {
+  id                   Int                 @id @default(autoincrement())
+  publicId             String              @unique @default(uuid()) @db.Uuid
+  podcastId            Int
+  podcast              Podcast             @relation(fields: [podcastId], references: [id])
+  title                String
+  enclosureUrl         String
+  status               EpisodeStatus       @default(PUBLISHED)
+  visibilityChangedAt  DateTime?
+  publishedAt          DateTime?
+  durationSec          Int?
+  description          String?
+  source               String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  transcripts          TranscriptSegment[]
+  tags                 EpisodeTag[]
+
+  @@unique([podcastId, enclosureUrl])
+  @@index([podcastId])
+  @@index([status])
+  @@index([podcastId, publishedAt])
+}
+
+model TranscriptSegment {
+  id           Int                @id @default(autoincrement())
+  publicId     String             @unique @default(uuid()) @db.Uuid
+  episodeId    Int
+  episode      PodcastEpisode     @relation(fields: [episodeId], references: [id])
+  text         String
+  startMs      Int
+  endMs        Int
+  language     String?
+  speakerLabel String?
+  confidence   Float?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  vectorRefs   VectorRef[]
+
+  @@unique([episodeId, startMs, endMs])
+  @@index([episodeId, startMs])
+}
+
+model VectorRef {
+  id             Int               @id @default(autoincrement())
+  segmentId      Int
+  segment        TranscriptSegment  @relation(fields: [segmentId], references: [id])
+  qdrantPointId  String            @unique
+  model          String
+  dim            Int
+  collection     String
+  version        Int
+  isActive       Boolean           @default(true)
+  embeddedAt     DateTime          @default(now())
+  deactivatedAt  DateTime?
+
+  @@unique([segmentId, model, version])
+  @@index([segmentId])
+  @@index([version])
+}
+
+model Tag {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  episodeTags EpisodeTag[]
+}
+
+model EpisodeTag {
+  episodeId Int
+  tagId     Int
+  episode   PodcastEpisode @relation(fields: [episodeId], references: [id])
+  tag       Tag            @relation(fields: [tagId], references: [id])
+
+  @@id([episodeId, tagId])
+  @@index([tagId])
+}
+
+model Source {
+  id         Int         @id @default(autoincrement())
+  kind       String
+  externalId String?
+  metadata   Json?
+  jobs       ImportJob[]
+}
+
+model ImportJob {
+  id         Int      @id @default(autoincrement())
+  sourceId   Int
+  source     Source   @relation(fields: [sourceId], references: [id])
+  status     String
+  message    String?
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+
+  @@index([sourceId])
+}
+
+model User {
+  id            Int              @id @default(autoincrement())
+  discordUserId String           @unique
+  name          String?
+  queryLogs     SearchQueryLog[]
+}
+
+model GuildConfig {
+  guildId            String  @id
+  defaultChannelId   String?
+  defaultSearchLimit Int     @default(10)
+  allowedRoleId      String?
+}
+
+model SearchQueryLog {
+  id         Int        @id @default(autoincrement())
+  userId     Int?
+  user       User?      @relation(fields: [userId], references: [id])
+  guildId    String?
+  channelId  String?
+  query      String
+  language   String?
+  usedLimit  Int?
+  model      String?
+  createdAt  DateTime   @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
