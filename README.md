@@ -67,8 +67,8 @@
 - Whisper CLI
   - 高精度の音声文字起こしを簡易に扱える。バッチ/自動化に適し、パイプラインに組み込みやすい
 
-- デプロイ（Render + Docker / docker-compose）
-  - Dockerでローカルと本番の差異を最小化。Renderは小規模構成での運用開始が容易
+- デプロイ（Render / ローカル）
+  - 軽量なローカル開発環境。Renderは小規模構成での運用開始が容易
 
 - discord.js
   - エコシステムとドキュメントが充実。Bot作成が容易で通知・連携に適する
@@ -82,21 +82,22 @@ apps/         # 実行可能なアプリケーション
   ├─ api/     # Hono API
   └─ admin-ui/# 管理画面 (React)
 packages/     # 共有ライブラリ (db など)
-docker-compose.yml
+install.sh    # 環境セットアップスクリプト
+start-background-services.sh  # Background Agent 起動スクリプト
 pnpm-workspace.yaml
 ```
 
 ## 開発
 
 ```bash
-# 依存をインストール
-pnpm install
+# 環境セットアップ（PostgreSQL + Qdrant のローカルインストール）
+./install.sh
 
-# ローカル環境を起動（Postgres + Qdrant）
-docker compose up -d
+# Background Services起動（PostgreSQL + Qdrant + API + Admin UI）
+./start-background-services.sh
 
-# API と Admin UI を同時に開発モードで起動
-pnpm dev
+# または手動で API と Admin UI のみ起動
+pnpm run dev
 ```
 
 ## 詳細ドキュメント

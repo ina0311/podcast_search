@@ -1,8 +1,12 @@
 {
-  "install": "corepack enable && corepack prepare pnpm@10.14.0 --activate && pnpm install --frozen-lockfile",
+  "install": "./install.sh",
   "terminals": [
     {
-      "name": "API dev",
+      "name": "Background Services",
+      "command": "./start-background-services.sh"
+    },
+    {
+      "name": "API dev", 
       "command": "pnpm run dev:api"
     },
     {
