@@ -54,9 +54,14 @@ start_local_services() {
             fi
             ;;
         Linux*)     
-            if ! systemctl is-active --quiet postgresql; then
-                echo -e "${YELLOW}PostgreSQL サービスを起動しています...${NC}"
-                sudo systemctl start postgresql
+            # Ubuntu/Debian でのsystemd使用可能性をチェック
+            if command -v systemctl &> /dev/null && systemctl --version &> /dev/null 2>&1; then
+                if ! systemctl is-active --quiet postgresql; then
+                    echo -e "${YELLOW}PostgreSQL サービスを起動しています...${NC}"
+                    sudo systemctl start postgresql
+                fi
+            else
+                echo -e "${YELLOW}⚠️ systemd が利用できません。PostgreSQL が手動で起動されていることを確認してください${NC}"
             fi
             ;;
     esac

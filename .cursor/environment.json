@@ -1,5 +1,20 @@
 {
   "install": "./install.sh",
+  "quick_setup": "./setup-back-agent.sh",
+  "setup": [
+    {
+      "name": "Install Dependencies",
+      "command": "pnpm install --frozen-lockfile"
+    },
+    {
+      "name": "Build Packages",
+      "command": "pnpm run build:packages"
+    },
+    {
+      "name": "Setup Database",
+      "command": "pnpm run db:generate && pnpm run db:migrate"
+    }
+  ],
   "terminals": [
     {
       "name": "Background Services",
@@ -13,5 +28,21 @@
       "name": "Admin UI",
       "command": "pnpm run dev:admin-ui"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "development",
+    "DATABASE_URL": "postgresql://$(whoami)@localhost:5432/podcast",
+    "QDRANT_URL": "http://localhost:6333",
+    "PORT": "3001"
+  },
+  "services": {
+    "postgresql": {
+      "port": 5432,
+      "required": true
+    },
+    "qdrant": {
+      "port": 6333,
+      "required": true
+    }
+  }
 }
