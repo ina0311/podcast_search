@@ -1,27 +1,18 @@
 {
-  "install": "./install.sh",
-  "quick_setup": "./setup-back-agent.sh",
+  "install": "./install-back-agent.sh",
   "setup": [
-    {
-      "name": "Install Dependencies",
-      "command": "pnpm install --frozen-lockfile"
-    },
-    {
-      "name": "Build Packages",
-      "command": "pnpm run build:packages"
-    },
-    {
-      "name": "Setup Database",
-      "command": "pnpm run db:generate && pnpm run db:migrate"
-    }
+    "pnpm run build:packages",
+    "pnpm run db:generate",
+    "pnpm run db:migrate"
   ],
+  "start": "pnpm run dev",
   "terminals": [
     {
       "name": "Background Services",
       "command": "./start-background-services.sh"
     },
     {
-      "name": "API dev", 
+      "name": "API Server", 
       "command": "pnpm run dev:api"
     },
     {
@@ -31,18 +22,25 @@
   ],
   "env": {
     "NODE_ENV": "development",
-    "DATABASE_URL": "postgresql://$(whoami)@localhost:5432/podcast",
+    "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/podcast",
     "QDRANT_URL": "http://localhost:6333",
-    "PORT": "3001"
+    "PORT": "3001",
+    "LOG_LEVEL": "info"
   },
   "services": {
     "postgresql": {
+      "image": "postgres:16",
       "port": 5432,
-      "required": true
+      "env": {
+        "POSTGRES_DB": "podcast",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "postgres"
+      }
     },
     "qdrant": {
+      "image": "qdrant/qdrant:latest",
       "port": 6333,
-      "required": true
+      "volumes": ["./qdrant_storage:/qdrant/storage"]
     }
   }
 }

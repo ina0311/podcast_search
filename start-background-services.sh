@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Background Services Start Script for Podcast Search
-# 本スクリプトはPodcast Searchのbackground agent（ローカル版）を起動します
+# Cursor Back Agent用 - Linux専用
 
-set -e  # エラー時に終了
+set -e
 
 # カラー出力用の定義
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${GREEN}🚀 Podcast Search Background Services 起動中...${NC}"
-echo -e "${BLUE}💻 ローカルインストール版（Docker不要）${NC}"
+echo -e "${GREEN}🚀 Podcast Search Background Services (Linux)${NC}"
+echo -e "${BLUE}🤖 Cursor Back Agent向け${NC}"
 
 # 環境確認
 check_prerequisites() {
@@ -40,31 +40,15 @@ check_prerequisites() {
     echo -e "${GREEN}✅ すべての前提条件が満たされています${NC}"
 }
 
-# ローカルサービスの起動
+# ローカルサービスの起動（Linux専用）
 start_local_services() {
     echo -e "${YELLOW}🐘 PostgreSQL と Qdrant を起動しています...${NC}"
     
-    # PostgreSQLサービスの起動確認
-    OS="$(uname -s)"
-    case "${OS}" in
-        Darwin*)    
-            if ! brew services list | grep postgresql | grep started &> /dev/null; then
-                echo -e "${YELLOW}PostgreSQL サービスを起動しています...${NC}"
-                brew services start postgresql@16 || brew services start postgresql
-            fi
-            ;;
-        Linux*)     
-            # Ubuntu/Debian でのsystemd使用可能性をチェック
-            if command -v systemctl &> /dev/null && systemctl --version &> /dev/null 2>&1; then
-                if ! systemctl is-active --quiet postgresql; then
-                    echo -e "${YELLOW}PostgreSQL サービスを起動しています...${NC}"
-                    sudo systemctl start postgresql
-                fi
-            else
-                echo -e "${YELLOW}⚠️ systemd が利用できません。PostgreSQL が手動で起動されていることを確認してください${NC}"
-            fi
-            ;;
-    esac
+    # PostgreSQLサービスの起動確認（systemd使用）
+    if ! systemctl is-active --quiet postgresql; then
+        echo -e "${YELLOW}PostgreSQL サービスを起動しています...${NC}"
+        sudo systemctl start postgresql
+    fi
     
     # PostgreSQLの接続確認
     echo -e "${BLUE}PostgreSQL の接続を確認しています...${NC}"
