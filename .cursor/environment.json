@@ -8,10 +8,6 @@
   "start": "pnpm run dev",
   "terminals": [
     {
-      "name": "Background Services",
-      "command": "./start-background-services.sh"
-    },
-    {
       "name": "API Server", 
       "command": "pnpm run dev:api"
     },

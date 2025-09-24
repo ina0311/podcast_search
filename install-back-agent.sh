@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Podcast Search Linux Installation Script - Back Agent用
-# Cursor Back Agent向けの最適化されたインストールスクリプト
+# Podcast Search Installation Script - Back Agent用
+# 必要最小限の構成でPodcast Searchをセットアップします
 
-set -e
+set -euo pipefail
 
 # カラー出力用の定義
 RED='\033[0;31m'
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${GREEN}🤖 Podcast Search - Back Agent インストール${NC}"
-echo -e "${BLUE}💻 Linux専用（Ubuntu/Debian）${NC}"
+echo -e "${BLUE}💻 Linux専用（Ubuntu/Debian）- 最適化構成${NC}"
 
 # 基本要件チェック
 check_prerequisites() {
@@ -25,90 +25,45 @@ check_prerequisites() {
         exit 1
     fi
     
-    # 基本パッケージインストール
+    # 基本パッケージインストール（jq削除）
     echo -e "${BLUE}システムパッケージを更新中...${NC}"
-    sudo apt update
-    sudo apt install -y curl wget gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
+    sudo apt-get update
+    sudo apt-get install -y curl wget gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
     
     echo -e "${GREEN}✅ 基本要件チェック完了${NC}"
 }
 
-# Node.js & pnpmインストール
+# Node.js & pnpmインストール（シンプル版）
 install_nodejs_pnpm() {
     echo -e "${YELLOW}📦 Node.js & pnpm をインストール中...${NC}"
     
-    # Node.js (NodeSource)
+    # Node.js (NodeSource LTS)
     if ! command -v node &> /dev/null; then
+        echo -e "${BLUE}Node.js LTS をインストール中...${NC}"
         curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
         sudo apt-get install -y nodejs
     fi
     
     # pnpm
     if ! command -v pnpm &> /dev/null; then
+        echo -e "${BLUE}pnpm をインストール中...${NC}"
         curl -fsSL https://get.pnpm.io/install.sh | sh -
         export PNPM_HOME="$HOME/.local/share/pnpm"
         export PATH="$PNPM_HOME:$PATH"
         echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> ~/.bashrc
         echo 'export PATH="$PNPM_HOME:$PATH"' >> ~/.bashrc
+        
+        # 現在のセッションでpnpmを有効化
+        source ~/.bashrc 2>/dev/null || true
     fi
     
     echo -e "${GREEN}✅ Node.js: $(node --version), pnpm: $(pnpm --version)${NC}"
 }
 
-# PostgreSQLインストール
-install_postgresql() {
-    echo -e "${YELLOW}🐘 PostgreSQL をインストール中...${NC}"
-    
-    if ! command -v psql &> /dev/null; then
-        sudo apt install -y postgresql postgresql-contrib
-        sudo systemctl start postgresql
-        sudo systemctl enable postgresql
-        
-        # データベースとユーザー作成
-        sudo -u postgres createuser --superuser postgres 2>/dev/null || true
-        sudo -u postgres createdb podcast 2>/dev/null || true
-        
-        # パスワード設定（back agent用）
-        sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || true
-    fi
-    
-    echo -e "${GREEN}✅ PostgreSQL インストール完了${NC}"
-}
+## DockerやDBサーバーのセットアップはBack Agentのservicesに委譲
+# （environment.jsonのservicesで自動起動されるため、ここでは何もしません）
 
-# Qdrantインストール
-install_qdrant() {
-    echo -e "${YELLOW}🔍 Qdrant をインストール中...${NC}"
-    
-    if ! command -v qdrant &> /dev/null; then
-        mkdir -p ~/.local/bin
-        
-        # Qdrant バイナリダウンロード
-        QDRANT_VERSION="v1.8.1"
-        curl -L "https://github.com/qdrant/qdrant/releases/download/${QDRANT_VERSION}/qdrant-x86_64-unknown-linux-gnu.tar.gz" | tar xz -C ~/.local/bin
-        chmod +x ~/.local/bin/qdrant
-        
-        # PATH追加
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-        export PATH="$HOME/.local/bin:$PATH"
-    fi
-    
-    echo -e "${GREEN}✅ Qdrant インストール完了${NC}"
-}
-
-# プロジェクト依存関係
-install_project_dependencies() {
-    echo -e "${YELLOW}📚 プロジェクト依存関係をインストール中...${NC}"
-    
-    # 依存関係インストール
-    pnpm install
-    
-    # パッケージビルド
-    pnpm run build:packages
-    
-    echo -e "${GREEN}✅ プロジェクト依存関係インストール完了${NC}"
-}
-
-# 環境設定
+# 環境設定（OpenAI API キー必須の注意追加）
 setup_environment() {
     echo -e "${YELLOW}🔧 環境設定中...${NC}"
     
@@ -125,39 +80,59 @@ PORT=3001
 NODE_ENV=development
 LOG_LEVEL=info
 
-# OpenAI (必要に応じて設定)
+# OpenAI API Key (必須 - 検索機能に使用)
 OPENAI_API_KEY="your-openai-api-key-here"
 EOF
     
     echo -e "${GREEN}✅ 環境設定完了${NC}"
+    echo -e "${YELLOW}⚠️  重要: apps/api/.env.local でOpenAI API キーを設定してください${NC}"
 }
 
-# データベース初期化
-initialize_database() {
-    echo -e "${YELLOW}🗃️ データベース初期化中...${NC}"
+# プロジェクト依存関係
+install_project_dependencies() {
+    echo -e "${YELLOW}📚 プロジェクト依存関係をインストール中...${NC}"
     
-    # PostgreSQL起動確認
-    sudo systemctl start postgresql
+    # プロジェクトディレクトリの確認
+    if [ ! -f "package.json" ] || [ ! -f "pnpm-workspace.yaml" ]; then
+        echo -e "${RED}❌ Podcast Searchプロジェクトディレクトリで実行してください${NC}"
+        exit 1
+    fi
     
-    # Prisma設定
-    pnpm run db:generate
-    pnpm run db:migrate
+    # 依存関係インストール（ビルドやマイグレーションはsetupに委譲）
+    echo -e "${BLUE}依存関係をインストール中...${NC}"
+    pnpm install
     
-    echo -e "${GREEN}✅ データベース初期化完了${NC}"
+    echo -e "${GREEN}✅ プロジェクト依存関係インストール完了${NC}"
 }
 
-# 完了メッセージ
+## データベース初期化はsetupに委譲（db:generate / db:migrate はenvironment.jsonが実行）
+
+# 完了メッセージ（シンプル版）
 show_completion() {
     echo ""
     echo -e "${GREEN}🎉 Back Agent インストール完了！${NC}"
     echo "========================================"
-    echo -e "${BLUE}利用可能なコマンド:${NC}"
-    echo -e "- プロジェクト開始: ${GREEN}pnpm run dev${NC}"
-    echo -e "- Background Services: ${GREEN}./start-background-services.sh${NC}"
+    echo -e "${BLUE}インストール済みバージョン:${NC}"
+    if command -v node &> /dev/null; then
+        echo -e "- Node.js: ${GREEN}$(node --version)${NC}"
+    fi
+    if command -v pnpm &> /dev/null; then
+        echo -e "- pnpm: ${GREEN}$(pnpm --version)${NC}"
+    fi
     echo ""
-    echo -e "${BLUE}サービスURL:${NC}"
+    echo -e "${YELLOW}⚠️  重要な設定:${NC}"
+    echo -e "- OpenAI API キー: ${GREEN}apps/api/.env.local${NC} で設定してください"
+    echo ""
+    echo -e "${BLUE}次のステップ:${NC}"
+    echo -e "1. DockerサービスはBack Agentのservicesで自動起動されます"
+    echo -e "2. setupで自動実行: ${GREEN}build:packages / db:generate / db:migrate${NC}"
+    echo -e "3. startでアプリ起動: ${GREEN}pnpm run dev${NC}"
+    echo ""
+    echo -e "${BLUE}サービスURL（Docker自動起動後）:${NC}"
     echo -e "- API Server:  ${GREEN}http://localhost:3001${NC}"
     echo -e "- Admin UI:    ${GREEN}http://localhost:5173${NC}"
+    echo -e "- PostgreSQL:  ${GREEN}localhost:5432${NC}"
+    echo -e "- Qdrant:      ${GREEN}http://localhost:6333${NC}"
 }
 
 # エラーハンドリング
@@ -170,23 +145,20 @@ trap error_handler ERR
 
 # メイン実行
 main() {
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${GREEN}Podcast Search Back Agent セットアップ開始${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    
     check_prerequisites
     install_nodejs_pnpm
-    install_postgresql
-    install_qdrant
     setup_environment
     install_project_dependencies
-    initialize_database
     show_completion
+    
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${GREEN}✅ install-back-agent.sh finished${NC}"
+    echo -e "${BLUE}========================================${NC}"
 }
 
-# コマンドライン引数処理
-case "${1:-}" in
-    "help"|"-h"|"--help")
-        echo "使用方法: $0"
-        echo "Cursor Back Agent向けLinux専用インストールスクリプト"
-        ;;
-    *)
-        main
-        ;;
-esac
+# メイン実行
+main
