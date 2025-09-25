@@ -60,6 +60,39 @@ install_nodejs_pnpm() {
     echo -e "${GREEN}✅ Node.js: $(node --version), pnpm: $(pnpm --version)${NC}"
 }
 
+## Docker（Engine & Compose）インストール
+install_docker() {
+    echo -e "${YELLOW}🐳 Docker (Engine & Compose) をインストール中...${NC}"
+    
+    if command -v docker &> /dev/null; then
+        echo -e "${GREEN}✅ Docker は既にインストール済み: $(docker --version)${NC}"
+        return 0
+    fi
+    
+    # 公式リポジトリからインストール（Ubuntu/Debian）
+    sudo apt-get update
+    sudo apt-get install -y ca-certificates curl gnupg
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+      $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    
+    # ユーザーをdockerグループに追加（再ログインで反映）
+    sudo usermod -aG docker $USER || true
+    
+    # サービス起動
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    
+    echo -e "${GREEN}✅ Docker インストール完了${NC}"
+    echo -e "${YELLOW}ℹ️  注意: グループ反映のため再ログインが必要な場合があります${NC}"
+}
+
 ## DockerやDBサーバーのセットアップはBack Agentのservicesに委譲
 # （environment.jsonのservicesで自動起動されるため、ここでは何もしません）
 
@@ -151,6 +184,7 @@ main() {
     
     check_prerequisites
     install_nodejs_pnpm
+    install_docker
     setup_environment
     install_project_dependencies
     show_completion
