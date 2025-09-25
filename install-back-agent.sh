@@ -85,9 +85,15 @@ install_docker() {
     # ユーザーをdockerグループに追加（再ログインで反映）
     sudo usermod -aG docker $USER || true
     
-    # サービス起動
-    sudo systemctl enable docker
-    sudo systemctl start docker
+    # サービス起動（systemdが使えない環境を考慮）
+    if command -v systemctl &> /dev/null; then
+        sudo systemctl enable docker
+        sudo systemctl start docker
+    elif command -v service &> /dev/null; then
+        sudo service docker start || true
+    else
+        echo -e "${YELLOW}⚠️  systemd/service が利用できません。必要に応じて 'sudo dockerd' などで手動起動してください${NC}"
+    fi
     
     echo -e "${GREEN}✅ Docker インストール完了${NC}"
     echo -e "${YELLOW}ℹ️  注意: グループ反映のため再ログインが必要な場合があります${NC}"
