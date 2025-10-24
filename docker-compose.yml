@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: podcast
     ports:
-      - "5432:5432"
+      - 15432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -18,8 +18,8 @@ services:
     container_name: podcast_qdrant
     restart: unless-stopped
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - 6333:6333
+      - 6334:6334
     volumes:
       - qdrant_data:/qdrant/storage
 

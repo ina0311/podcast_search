@@ -1,204 +1,118 @@
 #!/usr/bin/env bash
 
-# Podcast Search Installation Script - Back Agent用
-# 必要最小限の構成でPodcast Searchをセットアップします
+# Podcast Search Installation Script for Cursor Background Agent
+# https://cursor.com/ja/docs/background-agent に準拠した最小構成
 
 set -euo pipefail
 
-# カラー出力用の定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+log() {
+  local level=$1
+  shift
+  printf '[%s] %s\n' "$level" "$*"
+}
 
-echo -e "${GREEN}🤖 Podcast Search - Back Agent インストール${NC}"
-echo -e "${BLUE}💻 Linux専用（Ubuntu/Debian）- 最適化構成${NC}"
-
-# 基本要件チェック
 check_prerequisites() {
-    echo -e "${YELLOW}📋 基本要件をチェック中...${NC}"
-    
-    # OS確認
-    if [ ! -f /etc/os-release ]; then
-        echo -e "${RED}❌ Linux環境が必要です${NC}"
-        exit 1
-    fi
-    
-    # 基本パッケージインストール（jq削除）
-    echo -e "${BLUE}システムパッケージを更新中...${NC}"
-    sudo apt-get update
-    sudo apt-get install -y curl wget gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
-    
-    echo -e "${GREEN}✅ 基本要件チェック完了${NC}"
+  log INFO 'Checking prerequisites (apt, curl, gnupg)...'
+
+  if [ ! -f /etc/os-release ]; then
+    log ERROR 'Linux (Ubuntu/Debian) が必要です'
+    exit 1
+  fi
+
+  sudo apt-get update -y
+  sudo apt-get install -y curl ca-certificates gnupg
 }
 
-# Node.js & pnpmインストール（シンプル版）
-install_nodejs_pnpm() {
-    echo -e "${YELLOW}📦 Node.js & pnpm をインストール中...${NC}"
-    
-    # Node.js (NodeSource LTS)
-    if ! command -v node &> /dev/null; then
-        echo -e "${BLUE}Node.js LTS をインストール中...${NC}"
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-        sudo apt-get install -y nodejs
+install_node_and_pnpm() {
+  log INFO 'Installing Node.js (LTS) and pnpm...'
+
+  if ! command -v node >/dev/null 2>&1; then
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+  fi
+
+  if ! command -v pnpm >/dev/null 2>&1; then
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
+    if ! grep -q 'PNPM_HOME' "$HOME/.bashrc" 2>/dev/null; then
+      echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> "$HOME/.bashrc"
+      echo 'export PATH="$PNPM_HOME:$PATH"' >> "$HOME/.bashrc"
     fi
-    
-    # pnpm
-    if ! command -v pnpm &> /dev/null; then
-        echo -e "${BLUE}pnpm をインストール中...${NC}"
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        export PNPM_HOME="$HOME/.local/share/pnpm"
-        export PATH="$PNPM_HOME:$PATH"
-        echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> ~/.bashrc
-        echo 'export PATH="$PNPM_HOME:$PATH"' >> ~/.bashrc
-        
-        # 現在のセッションでpnpmを有効化
-        source ~/.bashrc 2>/dev/null || true
-    fi
-    
-    echo -e "${GREEN}✅ Node.js: $(node --version), pnpm: $(pnpm --version)${NC}"
+  fi
+
+  log INFO "Node.js $(node --version)"
+  log INFO "pnpm $(pnpm --version)"
 }
 
-## Docker（Engine & Compose）インストール
 install_docker() {
-    echo -e "${YELLOW}🐳 Docker (Engine & Compose) をインストール中...${NC}"
-    
-    if command -v docker &> /dev/null; then
-        echo -e "${GREEN}✅ Docker は既にインストール済み: $(docker --version)${NC}"
-        return 0
-    fi
-    
-    # 公式リポジトリからインストール（Ubuntu/Debian）
-    sudo apt-get update
-    sudo apt-get install -y ca-certificates curl gnupg
-    sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    sudo chmod a+r /etc/apt/keyrings/docker.gpg
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    
-    # ユーザーをdockerグループに追加（再ログインで反映）
-    sudo usermod -aG docker $USER || true
-    
-    # サービス起動（systemdが使えない環境を考慮）
-    if command -v systemctl &> /dev/null; then
-        sudo systemctl enable docker
-        sudo systemctl start docker
-    elif command -v service &> /dev/null; then
-        sudo service docker start || true
-    else
-        echo -e "${YELLOW}⚠️  systemd/service が利用できません。必要に応じて 'sudo dockerd' などで手動起動してください${NC}"
-    fi
-    
-    echo -e "${GREEN}✅ Docker インストール完了${NC}"
-    echo -e "${YELLOW}ℹ️  注意: グループ反映のため再ログインが必要な場合があります${NC}"
+  log INFO 'Installing Docker Engine & Compose plugin...'
+
+  if command -v docker >/dev/null 2>&1; then
+    log INFO "Docker already installed: $(docker --version)"
+    return
+  fi
+
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+  sudo apt-get update -y
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  sudo usermod -aG docker "$USER" || true
+
+  if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl enable docker
+    sudo systemctl start docker
+  elif command -v service >/dev/null 2>&1; then
+    sudo service docker start || true
+  else
+    log WARN "systemd/service が利用できません。必要に応じて 'sudo dockerd' で手動起動してください"
+  fi
 }
 
-## DockerやDBサーバーのセットアップはBack Agentのservicesに委譲
-# （environment.jsonのservicesで自動起動されるため、ここでは何もしません）
+create_env_file() {
+  log INFO 'Generating apps/api/.env.local...'
 
-# 環境設定（OpenAI API キー必須の注意追加）
-setup_environment() {
-    echo -e "${YELLOW}🔧 環境設定中...${NC}"
-    
-    # .env.local作成
-    cat > apps/api/.env.local << EOF
-# Database
+  cat > apps/api/.env.local <<'EOF'
+# Generated by install-back-agent.sh
+
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/podcast"
-
-# Vector Database
 QDRANT_URL="http://localhost:6333"
 
-# Server
 PORT=3001
 NODE_ENV=development
 LOG_LEVEL=info
 
-# OpenAI API Key (必須 - 検索機能に使用)
 OPENAI_API_KEY="your-openai-api-key-here"
 EOF
-    
-    echo -e "${GREEN}✅ 環境設定完了${NC}"
-    echo -e "${YELLOW}⚠️  重要: apps/api/.env.local でOpenAI API キーを設定してください${NC}"
+
+  log WARN 'OPENAI_API_KEY を apps/api/.env.local で設定してください'
 }
 
-# プロジェクト依存関係
-install_project_dependencies() {
-    echo -e "${YELLOW}📚 プロジェクト依存関係をインストール中...${NC}"
-    
-    # プロジェクトディレクトリの確認
-    if [ ! -f "package.json" ] || [ ! -f "pnpm-workspace.yaml" ]; then
-        echo -e "${RED}❌ Podcast Searchプロジェクトディレクトリで実行してください${NC}"
-        exit 1
-    fi
-    
-    # 依存関係インストール（ビルドやマイグレーションはsetupに委譲）
-    echo -e "${BLUE}依存関係をインストール中...${NC}"
-    pnpm install
-    
-    echo -e "${GREEN}✅ プロジェクト依存関係インストール完了${NC}"
+install_dependencies() {
+  log INFO 'Installing project dependencies via pnpm...'
+  pnpm install
 }
 
-## データベース初期化はsetupに委譲（db:generate / db:migrate はenvironment.jsonが実行）
-
-# 完了メッセージ（シンプル版）
-show_completion() {
-    echo ""
-    echo -e "${GREEN}🎉 Back Agent インストール完了！${NC}"
-    echo "========================================"
-    echo -e "${BLUE}インストール済みバージョン:${NC}"
-    if command -v node &> /dev/null; then
-        echo -e "- Node.js: ${GREEN}$(node --version)${NC}"
-    fi
-    if command -v pnpm &> /dev/null; then
-        echo -e "- pnpm: ${GREEN}$(pnpm --version)${NC}"
-    fi
-    echo ""
-    echo -e "${YELLOW}⚠️  重要な設定:${NC}"
-    echo -e "- OpenAI API キー: ${GREEN}apps/api/.env.local${NC} で設定してください"
-    echo ""
-    echo -e "${BLUE}次のステップ:${NC}"
-    echo -e "1. DockerサービスはBack Agentのservicesで自動起動されます"
-    echo -e "2. setupで自動実行: ${GREEN}build:packages / db:generate / db:migrate${NC}"
-    echo -e "3. startでアプリ起動: ${GREEN}pnpm run dev${NC}"
-    echo ""
-    echo -e "${BLUE}サービスURL（Docker自動起動後）:${NC}"
-    echo -e "- API Server:  ${GREEN}http://localhost:3001${NC}"
-    echo -e "- Admin UI:    ${GREEN}http://localhost:5173${NC}"
-    echo -e "- PostgreSQL:  ${GREEN}localhost:5432${NC}"
-    echo -e "- Qdrant:      ${GREEN}http://localhost:6333${NC}"
-}
-
-# エラーハンドリング
-error_handler() {
-    echo -e "${RED}❌ インストール中にエラーが発生しました${NC}"
-    exit 1
-}
-
-trap error_handler ERR
-
-# メイン実行
 main() {
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${GREEN}Podcast Search Back Agent セットアップ開始${NC}"
-    echo -e "${BLUE}========================================${NC}"
-    
-    check_prerequisites
-    install_nodejs_pnpm
-    install_docker
-    setup_environment
-    install_project_dependencies
-    show_completion
-    
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${GREEN}✅ install-back-agent.sh finished${NC}"
-    echo -e "${BLUE}========================================${NC}"
+  log INFO '=== Podcast Search Back Agent install start ==='
+
+  check_prerequisites
+  install_node_and_pnpm
+  install_docker
+  create_env_file
+  install_dependencies
+
+  log INFO 'Install completed. 次のステップ:'
+  log INFO '  1. Cursor Background Agent が services/setup/start を自動実行'
+  log INFO '  2. Dockerグループ反映のため再ログインが必要な場合があります'
 }
 
-# メイン実行
-main
+main "$@"
+
+
