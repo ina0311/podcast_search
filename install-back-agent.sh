@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# Podcast Search Installation Script for Cursor Background Agent
-# https://cursor.com/ja/docs/background-agent に準拠した最小構成
-
 set -euo pipefail
 
 log() {
@@ -11,11 +8,11 @@ log() {
   printf '[%s] %s\n' "$level" "$*"
 }
 
-check_prerequisites() {
-  log INFO 'Checking prerequisites (apt, curl, gnupg)...'
+ensure_prerequisites() {
+  log INFO 'apt パッケージの更新と必須ツール確認...'
 
   if [ ! -f /etc/os-release ]; then
-    log ERROR 'Linux (Ubuntu/Debian) が必要です'
+    log ERROR 'Ubuntu / Debian 系ディストリビューションが必要です'
     exit 1
   fi
 
@@ -23,8 +20,8 @@ check_prerequisites() {
   sudo apt-get install -y curl ca-certificates gnupg
 }
 
-install_node_and_pnpm() {
-  log INFO 'Installing Node.js (LTS) and pnpm...'
+ensure_node_and_pnpm() {
+  log INFO 'Node.js / pnpm を確認しています...'
 
   if ! command -v node >/dev/null 2>&1; then
     curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
@@ -32,47 +29,12 @@ install_node_and_pnpm() {
   fi
 
   if ! command -v pnpm >/dev/null 2>&1; then
-    curl -fsSL https://get.pnpm.io/install.sh | sh -
-    export PNPM_HOME="$HOME/.local/share/pnpm"
-    export PATH="$PNPM_HOME:$PATH"
-    if ! grep -q 'PNPM_HOME' "$HOME/.bashrc" 2>/dev/null; then
-      echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> "$HOME/.bashrc"
-      echo 'export PATH="$PNPM_HOME:$PATH"' >> "$HOME/.bashrc"
-    fi
+    corepack enable
+    corepack prepare pnpm@latest --activate
   fi
 
   log INFO "Node.js $(node --version)"
   log INFO "pnpm $(pnpm --version)"
-}
-
-install_docker() {
-  log INFO 'Installing Docker Engine & Compose plugin...'
-
-  if command -v docker >/dev/null 2>&1; then
-    log INFO "Docker already installed: $(docker --version)"
-    return
-  fi
-
-  sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
-    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-
-  sudo apt-get update -y
-  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-  sudo usermod -aG docker "$USER" || true
-
-  if command -v systemctl >/dev/null 2>&1; then
-    sudo systemctl enable docker
-    sudo systemctl start docker
-  elif command -v service >/dev/null 2>&1; then
-    sudo service docker start || true
-  else
-    log WARN "systemd/service が利用できません。必要に応じて 'sudo dockerd' で手動起動してください"
-  fi
 }
 
 create_env_file() {
@@ -102,17 +64,14 @@ install_dependencies() {
 main() {
   log INFO '=== Podcast Search Back Agent install start ==='
 
-  check_prerequisites
-  install_node_and_pnpm
-  install_docker
+  ensure_prerequisites
+  ensure_node_and_pnpm
   create_env_file
   install_dependencies
 
   log INFO 'Install completed. 次のステップ:'
-  log INFO '  1. Cursor Background Agent が services/setup/start を自動実行'
-  log INFO '  2. Dockerグループ反映のため再ログインが必要な場合があります'
+  log INFO '  1. Cursor Background Agent が setup/start を自動実行'
+  log INFO '  2. 必要に応じて Docker は手動で用意してください'
 }
 
 main "$@"
-
-
