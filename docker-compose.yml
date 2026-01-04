@@ -1,6 +1,45 @@
-version: '3'
+version: '3.8'
 services:
+  api:
+    profiles:
+      - backend
+    build:
+      context: /Users/inabaryo/workspace/portfolio/podcast_search
+      dockerfile: apps/api/Dockerfile
+    container_name: podcast_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    env_file:
+      - apps/api/.env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://user:password@postgres:5432/podcast}
+      QDRANT_URL: http://qdrant:6333
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - 3000:3000
+
+  admin-ui:
+    profiles:
+      - backend
+    build:
+      context: /Users/inabaryo/workspace/portfolio/podcast_search
+      dockerfile: apps/admin-ui/Dockerfile
+    container_name: podcast_admin_ui
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - 4173:4173
+
   postgres:
+    profiles:
+      - backend
     image: postgres:16-alpine
     container_name: podcast_postgres
     restart: unless-stopped
@@ -12,8 +51,16 @@ services:
       - 15432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d podcast']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   qdrant:
+    profiles:
+      - backend
     image: qdrant/qdrant:latest
     container_name: podcast_qdrant
     restart: unless-stopped
@@ -22,6 +69,14 @@ services:
       - 6334:6334
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "bash -c \"exec 3<>/dev/tcp/localhost/6333 && printf 'GET /healthz HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q healthz <&3\""
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   postgres_data:
