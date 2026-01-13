@@ -1,14 +1,33 @@
+# Dependencies
 node_modules
 apps/*/node_modules
 packages/*/node_modules
-dist
 .pnpm-store
+
+# Build outputs
+dist
+apps/*/dist
+packages/*/dist
 .turbo
+
+# Git
 .git
 .gitignore
-.DS_Store
-*.log
-coverage
+
+# Environment & secrets
+.env*
+*.local
+
+# IDE & OS
 .vscode
 .idea
+.cursor
+.DS_Store
 
+# Logs & coverage
+*.log
+coverage
+
+# Documentation (not needed in container)
+*.md
+docs
