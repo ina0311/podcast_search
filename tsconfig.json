@@ -4,7 +4,7 @@
   "references": [
     { "path": "apps/admin-ui/tsconfig.json" },
     { "path": "apps/api/tsconfig.json" },
-    { "path": "packages/db/tsconfig.json" },
+    { "path": "packages/database/tsconfig.json" },
     { "path": "packages/config/tsconfig.json" },
     { "path": "packages/search-core/tsconfig.json" }
   ]
