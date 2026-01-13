@@ -1,35 +1,50 @@
-# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Multi-stage Dockerfile for API
+# - dev: 開発用（ホットリロード対応）
+# - prod: 本番用（最適化ビルド）
+# =============================================================================
 
-FROM node:20-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="${PNPM_HOME}:${PATH}"
-ENV PNPM_REQUIRE_SCRIPTS_APPROVAL=false
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm" PATH="${PNPM_HOME}:${PATH}"
 WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl && corepack enable
+RUN apk add --no-cache openssl curl && corepack enable
 
-FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/api/package.json apps/api/package.json
-COPY packages/config/package.json packages/config/package.json
-COPY packages/db/package.json packages/db/package.json
-COPY packages/search-core/package.json packages/search-core/package.json
-RUN pnpm config set require-scripts-approval false \
-  && pnpm install --frozen-lockfile
+# -----------------------------------------------------------------------------
+# Development Stage
+# -----------------------------------------------------------------------------
+FROM base AS dev
+CMD ["sh", "-c", "pnpm config set store-dir /pnpm/store && pnpm install && pnpm db:generate && pnpm -C apps/api dev"]
 
-FROM deps AS build
+# -----------------------------------------------------------------------------
+# Builder Stage (for production)
+# -----------------------------------------------------------------------------
+FROM base AS builder
 COPY . .
-RUN pnpm -C packages/db prisma:generate \
+RUN pnpm install --frozen-lockfile \
+  && pnpm -C packages/database exec prisma generate \
   && pnpm --filter @podcast_search/config build \
   && pnpm --filter @podcast_search/search-core build \
-  && pnpm --filter @podcast_search/db build \
+  && pnpm --filter @podcast_search/database build \
   && pnpm --filter api build
 
-FROM base AS runner
-ENV NODE_ENV=production
-ENV PORT=3000
-WORKDIR /app
-COPY --from=build /app /app
+# -----------------------------------------------------------------------------
+# Production Stage
+# -----------------------------------------------------------------------------
+FROM base AS prod
+ENV NODE_ENV=production PORT=3000
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/packages/config/dist ./packages/config/dist
+COPY --from=builder /app/packages/config/package.json ./packages/config/package.json
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
+COPY --from=builder /app/packages/database/package.json ./packages/database/package.json
+COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
+COPY --from=builder /app/packages/search-core/dist ./packages/search-core/dist
+COPY --from=builder /app/packages/search-core/package.json ./packages/search-core/package.json
+
 WORKDIR /app/apps/api
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
-
