@@ -1,30 +1,32 @@
-# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Multi-stage Dockerfile for Admin UI
+# - dev: 開発用（Vite dev server）
+# - prod: 本番用（静的ファイル配信）
+# =============================================================================
 
 FROM node:22-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="${PNPM_HOME}:${PATH}"
-ENV PNPM_REQUIRE_SCRIPTS_APPROVAL=false
+ENV PNPM_HOME="/pnpm" PATH="${PNPM_HOME}:${PATH}"
 WORKDIR /app
-RUN apk add --no-cache libc6-compat && corepack enable
+RUN corepack enable
 
-FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/admin-ui/package.json apps/admin-ui/package.json
-RUN pnpm config set require-scripts-approval false \
-  && pnpm install --frozen-lockfile
+# -----------------------------------------------------------------------------
+# Development Stage
+# -----------------------------------------------------------------------------
+FROM base AS dev
+CMD ["sh", "-c", "pnpm config set store-dir /pnpm/store && pnpm install && pnpm -C apps/admin-ui dev --host 0.0.0.0"]
 
-FROM deps AS build
-COPY tsconfig.base.json ./
-COPY apps/admin-ui apps/admin-ui
-RUN pnpm --filter admin-ui build
+# -----------------------------------------------------------------------------
+# Builder Stage (for production)
+# -----------------------------------------------------------------------------
+FROM base AS builder
+COPY . .
+RUN pnpm install --frozen-lockfile && pnpm --filter admin-ui build
 
-FROM base AS runner
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/admin-ui/node_modules ./apps/admin-ui/node_modules
-COPY --from=build /app/tsconfig.base.json ./
-COPY --from=build /app/apps/admin-ui ./apps/admin-ui
-WORKDIR /app/apps/admin-ui
-EXPOSE 4173
-CMD ["pnpm", "preview", "--host", "0.0.0.0"]
-
+# -----------------------------------------------------------------------------
+# Production Stage
+# -----------------------------------------------------------------------------
+FROM node:22-alpine AS prod
+RUN npm install -g serve
+COPY --from=builder /app/apps/admin-ui/dist /app
+EXPOSE 8080
+CMD ["serve", "-s", "/app", "-l", "8080"]

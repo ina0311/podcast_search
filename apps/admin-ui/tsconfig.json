@@ -3,13 +3,14 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@podcast_search/config": ["../../packages/config/dist/index.d.ts"]
     }
   },
-  "include": ["src", "index.html"]
-} 
+  "include": ["src", "index.html", "vite.config.ts"]
+}
