@@ -5,7 +5,7 @@
 - **API** (`apps/api`, Hono)  
 - **管理UI** (`apps/admin-ui`, React)  
 - **共有ライブラリ**  
-  - `packages/db` : Prisma クライアント（シングルトン）と DB アクセス
+  - `packages/database` : Prisma クライアント（シングルトン）と DB アクセス
   - `packages/config` : 環境変数の型安全なロード（Zod）
   - `packages/search-core` : OpenAI Embedding + Qdrant の検索ユースケース
 - **データベース** (PostgreSQL)  
