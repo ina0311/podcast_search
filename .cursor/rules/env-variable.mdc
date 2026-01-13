@@ -1,0 +1,92 @@
+---
+description: 新しい環境変数を追加する際のパターン
+globs:
+  - packages/config/src/index.ts
+  - docs/configuration.md
+  - docker-compose.yml
+---
+
+# 環境変数追加パターン
+
+## 実装手順
+
+### 1. Zodスキーマに追加 (`packages/config/src/index.ts`)
+
+```typescript
+const EnvSchema = z.object({
+  // 既存...
+  
+  // 必須の環境変数
+  NEW_REQUIRED_VAR: z.string().min(1),
+  
+  // オプションの環境変数（空文字も許容しない）
+  NEW_OPTIONAL_VAR: optionalNonEmptyString,
+  
+  // デフォルト値付き
+  NEW_VAR_WITH_DEFAULT: z.string().default('default-value'),
+  
+  // URL形式
+  NEW_URL_VAR: z.string().url().optional(),
+  
+  // 数値（文字列から変換）
+  NEW_PORT: z.coerce.number().default(8080),
+  
+  // enum
+  NEW_MODE: z.enum(['development', 'production']).default('development'),
+});
+```
+
+### 2. 型が自動的にexportされる
+
+```typescript
+// 利用側
+import { env } from '@podcast_search/config';
+
+// env.NEW_REQUIRED_VAR は string 型
+// env.NEW_OPTIONAL_VAR は string | undefined 型
+```
+
+### 3. docker-compose.yml に追加
+
+```yaml
+services:
+  api:
+    environment:
+      NEW_REQUIRED_VAR: ${NEW_REQUIRED_VAR}
+      NEW_OPTIONAL_VAR: ${NEW_OPTIONAL_VAR:-}
+```
+
+### 4. ドキュメント更新 (`docs/configuration.md`)
+
+```markdown
+## 環境変数
+
+| 変数名 | 必須 | 説明 | デフォルト |
+|--------|------|------|-----------|
+| NEW_REQUIRED_VAR | ✅ | 説明 | - |
+| NEW_OPTIONAL_VAR | - | 説明 | - |
+```
+
+## optionalNonEmptyString ヘルパー
+
+空文字を `undefined` として扱うプリプロセッサ（既に定義済み）:
+
+```typescript
+const optionalNonEmptyString = z.preprocess(
+  (value) => {
+    if (typeof value === 'string' && value.trim() === '') {
+      return undefined;
+    }
+    return value;
+  },
+  z.string().min(1).optional()
+);
+```
+
+## チェックリスト
+
+- [ ] `EnvSchema` に追加
+- [ ] 必須/オプションを明確に
+- [ ] `docker-compose.yml` に追加
+- [ ] `docs/configuration.md` を更新
+- [ ] `.env.example` があれば更新

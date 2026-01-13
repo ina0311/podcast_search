@@ -1,0 +1,96 @@
+---
+description: packages/ 配下のパッケージ間の責務分担とアーキテクチャ方針
+globs:
+  - packages/*/src/**/*.ts
+  - apps/*/src/**/*.ts
+---
+
+# パッケージアーキテクチャ方針
+
+## 責務分担
+
+```
+apps/api (アプリケーション層)
+    ↓ 依存
+┌────────────────────────────────────────────────┐
+│  search-core         database                  │
+│  (ベクトル検索)       (RDBアクセス)             │
+│                                                │
+│  - Embedding生成      - Prismaクライアント管理  │
+│  - Qdrant検索         - リポジトリ層            │
+│  - 検索スキーマ       - 型定義                  │
+└────────────────────────────────────────────────┘
+        ↓ 依存しない（独立）
+```
+
+## パッケージ別の責務
+
+### `@podcast_search/database`
+
+**責務**: RDBへのデータアクセスを抽象化
+
+- Prismaクライアントのシングルトン管理
+- リポジトリパターンによるデータアクセス層
+- Prisma型の再エクスポート
+
+```typescript
+// ✅ 良い例: リポジトリを使用
+import { EpisodeRepository } from '@podcast_search/database';
+const repo = new EpisodeRepository();
+const episodes = await repo.findByIds([1, 2, 3]);
+
+// ⚠️ 避ける: 直接prismaを使うのは特殊なケースのみ
+import { prisma } from '@podcast_search/database';
+const episodes = await prisma.podcastEpisode.findMany({ ... });
+```
+
+### `@podcast_search/search-core`
+
+**責務**: ベクトル検索機能に特化
+
+- OpenAI Embeddingの生成
+- Qdrantへのベクトル検索
+- 検索クエリのZodスキーマ
+
+**持たせない責務**:
+- RDBアクセス（リポジトリ層）
+- ビジネスロジック
+
+```typescript
+// ✅ search-coreはベクトル検索のみ
+const searchCore = new SearchCore({ ... });
+const hits = await searchCore.searchByQuery('キーワード', 10);
+// hits = [{ id, score, payload: { episodeId } }]
+```
+
+### `apps/api` (サービス層)
+
+**責務**: パッケージを組み合わせたビジネスロジック
+
+```typescript
+// ✅ 良い例: APIでsearch-coreとdatabaseを組み合わせ
+import { SearchCore } from '@podcast_search/search-core';
+import { EpisodeRepository } from '@podcast_search/database';
+
+// ベクトル検索でIDを取得
+const hits = await searchCore.searchByQuery(query, limit);
+const episodeIds = hits.map(h => h.payload?.episodeId).filter(Boolean);
+
+// リポジトリでエピソード詳細を取得
+const repo = new EpisodeRepository();
+const episodes = await repo.findByIds(episodeIds);
+```
+
+## 設計原則
+
+1. **単一責任の原則**: 各パッケージは1つの責務に集中
+2. **依存の方向**: apps → packages（逆方向は禁止）
+3. **パッケージ間の独立**: `search-core` と `database` は相互に依存しない
+4. **リポジトリパターン**: データアクセスは `database` パッケージのリポジトリを通す
+
+## チェックリスト
+
+- [ ] `search-core` に Prisma や RDB 関連のコードを追加していないか
+- [ ] `database` にベクトル検索や外部API関連のコードを追加していないか
+- [ ] 新しいデータアクセスロジックは `database/src/repositories/` に追加したか
+- [ ] ビジネスロジックは `apps/` のサービス層に実装しているか

@@ -1,0 +1,151 @@
+---
+description: 新しいAPIエンドポイントを追加する際のパターン
+globs:
+  - apps/api/src/routes/**/*.ts
+  - apps/api/features/**/*.feature
+  - apps/api/tests/**/*.steps.ts
+---
+
+# APIエンドポイント追加パターン
+
+## ディレクトリ構成
+
+```
+apps/api/
+├── src/routes/
+│   └── {resource}.ts      # ルート実装
+├── features/
+│   └── {resource}.feature # BDDシナリオ
+└── tests/
+    └── {resource}.steps.ts # ステップ定義
+```
+
+## 実装手順
+
+### 1. ルートファイル作成 (`apps/api/src/routes/{resource}.ts`)
+
+```typescript
+import { Hono } from 'hono';
+import { prisma } from '@podcast_search/database';
+import { z } from 'zod';
+
+const router = new Hono();
+
+// バリデーションスキーマを先に定義
+const CreateResourceSchema = z.object({
+  name: z.string().min(1).max(100),
+});
+
+// GET: 一覧取得（ページネーション推奨）
+router.get('/', async (c) => {
+  const resources = await prisma.resource.findMany({
+    take: 20,
+    orderBy: { createdAt: 'desc' },
+  });
+  return c.json({ resources });
+});
+
+// GET: 単体取得
+router.get('/:id', async (c) => {
+  const idParam = c.req.param('id');
+  const parsed = z.coerce.number().int().positive().safeParse(idParam);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid id' }, 400);
+  }
+  const resource = await prisma.resource.findUnique({
+    where: { id: parsed.data },
+  });
+  if (!resource) return c.json({ error: 'Not found' }, 404);
+  return c.json(resource);
+});
+
+// POST: 作成
+router.post('/', async (c) => {
+  const body = await c.req.json();
+  const parsed = CreateResourceSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'Invalid body', issues: parsed.error.format() }, 400);
+  }
+  const resource = await prisma.resource.create({ data: parsed.data });
+  return c.json(resource, 201);
+});
+
+export default router;
+```
+
+### 2. ルーターを登録 (`apps/api/src/index.ts`)
+
+```typescript
+import resourceRouter from './routes/{resource}';
+
+app.route('/{resources}', resourceRouter);
+```
+
+### 3. Feature ファイル作成
+
+```gherkin
+# apps/api/features/{resource}.feature
+Feature: {Resource} API
+  {Resource} の CRUD 操作
+
+  Scenario: 一覧を取得する
+    Given データベースに {resource} が登録されている
+    When GET /{resources} をリクエストする
+    Then ステータスコード 200 が返される
+    And レスポンスに {resources} 配列が含まれる
+
+  Scenario: 存在しない {resource} を取得する
+    When GET /{resources}/9999 をリクエストする
+    Then ステータスコード 404 が返される
+```
+
+### 4. ステップ定義作成
+
+```typescript
+// apps/api/tests/{resource}.steps.ts
+import { defineFeature, loadFeature } from 'jest-cucumber';
+import { Hono } from 'hono';
+
+const feature = loadFeature('./apps/api/features/{resource}.feature');
+
+defineFeature(feature, (test) => {
+  let app: Hono;
+  let response: Response;
+  let responseBody: unknown;
+
+  // テスト用のモックアプリを構築
+  const createTestApp = (options = {}) => {
+    const app = new Hono();
+    // ... モック実装
+    return app;
+  };
+
+  test('一覧を取得する', ({ given, when, then, and }) => {
+    given(/^データベースに (.+) が登録されている$/, () => {
+      app = createTestApp({ /* mock data */ });
+    });
+
+    when(/^GET \/(.+) をリクエストする$/, async (path) => {
+      response = await app.request(`/${path}`);
+      responseBody = await response.json();
+    });
+
+    then(/^ステータスコード (\d+) が返される$/, (statusCode) => {
+      expect(response.status).toBe(parseInt(statusCode, 10));
+    });
+
+    and(/^レスポンスに (.+) 配列が含まれる$/, (key) => {
+      expect(responseBody).toHaveProperty(key);
+    });
+  });
+});
+```
+
+## チェックリスト
+
+- [ ] Zodスキーマでリクエストバリデーション
+- [ ] エラー時は適切なステータスコードを返す（400/404/500）
+- [ ] `apps/api/src/index.ts` でルーター登録
+- [ ] Feature ファイルでシナリオを定義
+- [ ] ステップ定義でテスト実装
+- [ ] `pnpm test` で全テスト通過を確認

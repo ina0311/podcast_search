@@ -1,0 +1,117 @@
+---
+description: packages/ 配下に新しい共有パッケージを追加する際のパターン
+globs:
+  - packages/*/package.json
+  - packages/*/src/index.ts
+  - packages/*/tsconfig.json
+---
+
+# 共有パッケージ追加パターン
+
+## ディレクトリ構成
+
+```
+packages/{package-name}/
+├── package.json
+├── tsconfig.json
+├── src/
+│   └── index.ts          # エントリポイント（全てexport）
+├── features/             # BDDテスト（オプション）
+│   └── {feature}.feature
+└── tests/
+    └── {feature}.steps.ts
+```
+
+## 実装手順
+
+### 1. ディレクトリ作成
+
+```bash
+mkdir -p packages/{package-name}/{src,features,tests}
+```
+
+### 2. package.json 作成
+
+```json
+{
+  "name": "@podcast_search/{package-name}",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    // 必要な依存
+  }
+}
+```
+
+### 3. tsconfig.json 作成
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}
+```
+
+### 4. src/index.ts 作成（バレルエクスポート）
+
+```typescript
+// 型・インターフェースをexport
+export interface SomeOptions {
+  apiKey: string;
+}
+
+// クラス・関数をexport
+export class SomeService {
+  constructor(private opts: SomeOptions) {}
+  
+  async doSomething(): Promise<string> {
+    return 'result';
+  }
+}
+
+// Zodスキーマもexport（バリデーション用）
+import { z } from 'zod';
+export const SomeSchema = z.object({
+  field: z.string(),
+});
+```
+
+### 5. jest.config.js の moduleNameMapper に追加
+
+```javascript
+moduleNameMapper: {
+  // 既存...
+  '^@podcast_search/{package-name}$': '<rootDir>/packages/{package-name}/src/index.ts',
+},
+```
+
+### 6. 他パッケージ/アプリから利用
+
+```typescript
+import { SomeService, SomeSchema } from '@podcast_search/{package-name}';
+```
+
+## 命名規則
+
+- パッケージ名: `@podcast_search/{kebab-case}`
+- クラス: `PascalCase`
+- 関数: `camelCase`
+- Zodスキーマ: `PascalCaseSchema`
+
+## チェックリスト
+
+- [ ] `package.json` の name は `@podcast_search/` prefix
+- [ ] `tsconfig.json` は `tsconfig.base.json` を継承
+- [ ] `src/index.ts` で全 export をバレル化
+- [ ] `jest.config.js` の moduleNameMapper に追加
+- [ ] `pnpm build:packages` でビルド確認

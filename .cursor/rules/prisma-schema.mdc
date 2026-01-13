@@ -1,0 +1,125 @@
+---
+description: Prismaスキーマ変更時のパターン
+globs:
+  - packages/database/prisma/schema.prisma
+  - packages/database/src/index.ts
+---
+
+# Prismaスキーマ変更パターン
+
+## モデル追加のテンプレート
+
+```prisma
+model NewModel {
+  // 内部ID（数値PK）
+  id        Int      @id @default(autoincrement())
+  
+  // 外部公開ID（UUID）
+  publicId  String   @unique @default(uuid()) @db.Uuid
+  
+  // 必須フィールド
+  name      String
+  
+  // オプションフィールド
+  description String?
+  
+  // リレーション（FK）
+  parentId  Int
+  parent    ParentModel @relation(fields: [parentId], references: [id])
+  
+  // タイムスタンプ
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // インデックス
+  @@index([parentId])
+  
+  // 複合ユニーク
+  @@unique([parentId, name])
+}
+```
+
+## ID戦略
+
+- **内部ID**: `id Int @id @default(autoincrement())` - JOIN性能重視
+- **外部ID**: `publicId String @unique @default(uuid()) @db.Uuid` - API/URLで公開
+
+## enum 追加
+
+```prisma
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+```
+
+## リレーションパターン
+
+### 1:N（一対多）
+
+```prisma
+model Parent {
+  id       Int     @id @default(autoincrement())
+  children Child[]
+}
+
+model Child {
+  id       Int    @id @default(autoincrement())
+  parentId Int
+  parent   Parent @relation(fields: [parentId], references: [id])
+  
+  @@index([parentId])
+}
+```
+
+### N:N（多対多）- 中間テーブル
+
+```prisma
+model Post {
+  id   Int       @id @default(autoincrement())
+  tags PostTag[]
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  posts PostTag[]
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+  post   Post @relation(fields: [postId], references: [id])
+  tag    Tag  @relation(fields: [tagId], references: [id])
+  
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+```
+
+## マイグレーション手順
+
+```bash
+# 1. スキーマ編集後、マイグレーション作成
+pnpm db:migrate
+
+# 2. Prisma Client 再生成（自動で実行されるが念のため）
+pnpm db:generate
+
+# 3. 本番デプロイ時
+pnpm db:deploy
+
+# 4. スキーマのフォーマット
+pnpm db:format
+```
+
+## チェックリスト
+
+- [ ] `publicId` を外部公開用に追加
+- [ ] `createdAt` / `updatedAt` を追加
+- [ ] 適切なインデックスを追加（FK、検索対象）
+- [ ] リレーションの `onDelete` を検討
+- [ ] `pnpm db:migrate` でマイグレーション作成
+- [ ] `pnpm db:generate` でクライアント再生成
+- [ ] `docs/data_model.md` を更新

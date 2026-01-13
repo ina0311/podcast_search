@@ -1,0 +1,173 @@
+---
+description: jest-cucumber を使った BDD テストを追加する際のパターン
+globs:
+  - "**/features/**/*.feature"
+  - "**/tests/**/*.steps.ts"
+---
+
+# BDDテスト追加パターン
+
+## ディレクトリ構成
+
+```
+{package-or-app}/
+├── features/
+│   └── {feature}.feature   # Gherkin シナリオ
+└── tests/
+    └── {feature}.steps.ts  # Jest ステップ定義
+```
+
+## Feature ファイルテンプレート
+
+```gherkin
+# features/{feature}.feature
+Feature: {機能名}
+  {機能の説明}
+
+  Scenario: 正常系 - {操作}
+    Given {前提条件}
+    And {追加の前提条件}
+    When {操作}
+    Then {期待結果}
+    And {追加の期待結果}
+
+  Scenario: 異常系 - {エラーケース}
+    When {不正な操作}
+    Then {エラー結果}
+
+  Scenario: 境界値 - {境界条件}
+    When {境界値での操作}
+    Then {期待結果}
+```
+
+## ステップ定義テンプレート
+
+```typescript
+// tests/{feature}.steps.ts
+import { defineFeature, loadFeature } from 'jest-cucumber';
+
+// ワークスペースルートからの相対パス
+const feature = loadFeature('./packages/{package}/features/{feature}.feature');
+
+defineFeature(feature, (test) => {
+  // 共有の状態
+  let result: unknown;
+  let error: unknown;
+
+  // 各テスト前にリセット
+  beforeEach(() => {
+    result = null;
+    error = null;
+  });
+
+  test('{シナリオ名}', ({ given, and, when, then }) => {
+    given('{前提条件}', () => {
+      // セットアップ
+    });
+
+    and('{追加の前提条件}', () => {
+      // 追加セットアップ
+    });
+
+    // 正規表現でパラメータをキャプチャ
+    when(/^"(.+)" で検索する$/, async (query: string) => {
+      result = await someFunction(query);
+    });
+
+    then('{期待結果}', () => {
+      expect(result).toBeDefined();
+    });
+
+    and('{追加の期待結果}', () => {
+      expect(result).toHaveProperty('field');
+    });
+  });
+
+  test('{異常系シナリオ}', ({ when, then }) => {
+    when('{不正な操作}', () => {
+      try {
+        someFunction('invalid');
+      } catch (e) {
+        error = e;
+      }
+    });
+
+    then('{エラー結果}', () => {
+      expect(error).toBeDefined();
+    });
+  });
+});
+```
+
+## 正規表現パターン例
+
+```typescript
+// 文字列キャプチャ
+when(/^"(.+)" で検索する$/, (query: string) => {});
+
+// 数値キャプチャ
+when(/^limit を (\d+) に指定する$/, (limit: string) => {
+  const num = parseInt(limit, 10);
+});
+
+// 複数キャプチャ
+when(/^(\d+) から (\d+) の範囲で取得する$/, (start: string, end: string) => {});
+
+// 日本語混在
+when(/^ステータスコード (\d+) が返される$/, (statusCode: string) => {
+  expect(response.status).toBe(parseInt(statusCode, 10));
+});
+```
+
+## モック例
+
+```typescript
+// メソッドのモック
+jest.spyOn(service, 'method').mockResolvedValue(mockData);
+
+// 外部APIのモック
+jest.mock('openai', () => ({
+  OpenAI: jest.fn().mockImplementation(() => ({
+    embeddings: { create: jest.fn().mockResolvedValue({ data: [{ embedding: [] }] }) }
+  }))
+}));
+```
+
+## Hono API テストのパターン
+
+```typescript
+// モックアプリを構築してテスト
+const createTestApp = (options = {}) => {
+  const app = new Hono();
+  
+  app.get('/items', (c) => {
+    return c.json({ items: options.items ?? [] });
+  });
+  
+  app.notFound((c) => c.json({ error: 'Not Found' }, 404));
+  
+  return app;
+};
+
+// テスト内で使用
+const app = createTestApp({ items: mockItems });
+const response = await app.request('/items');
+const body = await response.json();
+```
+
+## テスト実行
+
+```bash
+pnpm test              # 全テスト
+pnpm test:watch        # ウォッチモード
+pnpm test:coverage     # カバレッジ付き
+```
+
+## チェックリスト
+
+- [ ] Feature ファイルは日本語で読みやすく
+- [ ] シナリオ名は「{状況} - {条件}」形式
+- [ ] ステップ定義の正規表現はシンプルに
+- [ ] 外部依存はモック化
+- [ ] `loadFeature` のパスはワークスペースルートから
+- [ ] `pnpm test` で全テスト通過確認

@@ -1,0 +1,144 @@
+---
+description: admin-ui に新しいページを追加する際のパターン
+globs:
+  - apps/admin-ui/src/**/*.tsx
+  - apps/admin-ui/src/App.tsx
+---
+
+# フロントエンドページ追加パターン
+
+## ディレクトリ構成
+
+```
+apps/admin-ui/src/
+├── App.tsx              # ルーティング定義
+├── components/          # 共有コンポーネント
+│   └── {Component}.tsx
+└── pages/               # ページコンポーネント（推奨構成）
+    └── {Page}.tsx
+```
+
+## 実装手順
+
+### 1. ページコンポーネント作成
+
+```typescript
+// apps/admin-ui/src/pages/NewPage.tsx
+import { useState, useEffect } from 'react';
+
+interface Item {
+  id: number;
+  name: string;
+}
+
+export default function NewPage() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const res = await fetch('/api/items');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setItems(data.items);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchItems();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      <h2>New Page</h2>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### 2. App.tsx にルート追加
+
+```typescript
+// apps/admin-ui/src/App.tsx
+import { Routes, Route, Link } from 'react-router-dom';
+import NewPage from './pages/NewPage';
+
+export default function App() {
+  return (
+    <main>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/new-page">New Page</Link>  {/* 追加 */}
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/new-page" element={<NewPage />} />  {/* 追加 */}
+      </Routes>
+    </main>
+  );
+}
+```
+
+### 3. API呼び出し（Vite Proxy経由）
+
+```typescript
+// /api/xxx は vite.config.ts の proxy で API サーバーに転送される
+// 注意: 現在の設定では /api → API server の / にリライトされる
+const res = await fetch('/api/items');  // → http://localhost:3000/items
+```
+
+## TanStack Query を使う場合（推奨）
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+
+function NewPage() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['items'],
+    queryFn: async () => {
+      const res = await fetch('/api/items');
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    },
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {data.items.map((item) => (
+        <li key={item.id}>{item.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## 注意点
+
+- 現在は inline style 使用中（Tailwind/DaisyUI は依存にあるが未活用）
+- TanStack Query は依存にあるが未使用（活用推奨）
+- axiosも依存にあるが fetch で十分
+
+## チェックリスト
+
+- [ ] コンポーネントを作成
+- [ ] `App.tsx` の `<Routes>` に追加
+- [ ] ナビゲーションに `<Link>` を追加
+- [ ] 型定義（interface/type）を追加
+- [ ] エラーハンドリングを実装
+- [ ] ローディング状態を表示
