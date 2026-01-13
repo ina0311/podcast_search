@@ -1,0 +1,8 @@
+# dotenvx private keys (NEVER commit)
+.env.keys
+
+# Local unencrypted env
+.env.local
+.env.*.local
+
+
