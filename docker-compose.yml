@@ -1,83 +1,110 @@
-version: '3.8'
+# =============================================================================
+# Docker Compose for Podcast Search
+# 開発: docker compose up
+# 本番: docker build --target prod
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # Application Services
+  # ---------------------------------------------------------------------------
   api:
-    profiles:
-      - backend
     build:
-      context: /Users/inabaryo/workspace/portfolio/podcast_search
+      context: .
       dockerfile: apps/api/Dockerfile
+      target: dev
     container_name: podcast_api
-    restart: unless-stopped
+    profiles: [backend]
     depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_healthy
-    env_file:
-      - apps/api/.env.local
+      postgres: { condition: service_healthy }
+      qdrant: { condition: service_healthy }
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: ${DATABASE_URL:-postgresql://user:password@postgres:5432/podcast}
+      CI: "true"
+      NODE_ENV: development
+      DATABASE_URL: postgresql://user:password@postgres:5432/podcast
       QDRANT_URL: http://qdrant:6333
-      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-    ports:
-      - 3000:3000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-dummy-key-for-development}
+    ports: ["3000:3000"]
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/pnpm/store
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 300s
 
   admin-ui:
-    profiles:
-      - backend
     build:
-      context: /Users/inabaryo/workspace/portfolio/podcast_search
+      context: .
       dockerfile: apps/admin-ui/Dockerfile
+      target: dev
     container_name: podcast_admin_ui
-    restart: unless-stopped
+    profiles: [backend]
     depends_on:
-      - api
-    ports:
-      - 4173:4173
+      api: { condition: service_healthy }
+    environment:
+      API_URL: http://api:3000
+      # Required for prisma generate during pnpm install (postinstall hook)
+      DATABASE_URL: postgresql://user:password@postgres:5432/podcast
+    ports: ["5173:5173"]
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/pnpm/store
 
+  # ---------------------------------------------------------------------------
+  # Database Migration
+  # ---------------------------------------------------------------------------
+  migrate:
+    image: node:20-alpine
+    container_name: podcast_migrate
+    profiles: [migrate]
+    working_dir: /app
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      CI: "true"
+      DATABASE_URL: postgresql://user:password@postgres:5432/podcast
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/pnpm/store
+    command: sh -c "corepack enable && pnpm install && pnpm --filter @podcast_search/database prisma:migrate"
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
   postgres:
-    profiles:
-      - backend
     image: postgres:16-alpine
     container_name: podcast_postgres
-    restart: unless-stopped
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: podcast
-    ports:
-      - 15432:5432
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    ports: ["15432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d podcast']
+      test: ["CMD-SHELL", "pg_isready -U user -d podcast"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 5s
 
   qdrant:
-    profiles:
-      - backend
     image: qdrant/qdrant:latest
     container_name: podcast_qdrant
-    restart: unless-stopped
-    ports:
-      - 6333:6333
-      - 6334:6334
-    volumes:
-      - qdrant_data:/qdrant/storage
+    ports: ["6333:6333", "6334:6334"]
+    volumes: [qdrant_data:/qdrant/storage]
     healthcheck:
-      test:
-        - CMD-SHELL
-        - "bash -c \"exec 3<>/dev/tcp/localhost/6333 && printf 'GET /healthz HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q healthz <&3\""
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/6333' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 5s
 
 volumes:
   postgres_data:
-  qdrant_data: 
+  qdrant_data:
+  node_modules:
+  pnpm_store:
