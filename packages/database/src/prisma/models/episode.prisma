@@ -1,0 +1,21 @@
+model PodcastEpisode {
+  id                   Int            @id @default(autoincrement())
+  publicId             String         @unique @default(uuid()) @db.Uuid
+  podcastId            Int
+  podcast              Podcast        @relation(fields: [podcastId], references: [id])
+  title                String
+  enclosureUrl         String
+  status               EpisodeStatus  @default(PUBLISHED)
+  visibilityChangedAt  DateTime?
+  publishedAt          DateTime?
+  durationSec          Int?
+  description          String?
+  source               String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  transcripts          TranscriptSegment[]
+
+  @@unique([podcastId, enclosureUrl])
+}
+

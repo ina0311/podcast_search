@@ -1,0 +1,17 @@
+model TranscriptSegment {
+  id           Int            @id @default(autoincrement())
+  publicId     String         @unique @default(uuid()) @db.Uuid
+  episodeId    Int
+  episode      PodcastEpisode @relation(fields: [episodeId], references: [id])
+  text         String
+  startMs      Int
+  endMs        Int
+  language     String?
+  speakerLabel String?
+  confidence   Float?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([episodeId, startMs, endMs])
+}
+

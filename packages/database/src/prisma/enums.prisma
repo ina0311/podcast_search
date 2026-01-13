@@ -1,0 +1,7 @@
+enum EpisodeStatus {
+  PUBLISHED
+  PRIVATE
+  REMOVED
+  DRAFT
+}
+
