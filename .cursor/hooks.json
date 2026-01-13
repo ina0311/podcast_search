@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/biome.sh"
+      },
+      {
+        "command": ".cursor/hooks/typecheck.sh"
+      },
+      {
+        "command": ".cursor/hooks/build-package.sh"
+      }
+    ]
+  }
+}
+

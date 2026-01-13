@@ -7,33 +7,63 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm-run-all -p dev:*",
+    "dev": "dotenvx run -f packages/config/environments/.env.development -- npm-run-all -p dev:*",
     "dev:api": "pnpm -C apps/api dev",
     "dev:admin-ui": "pnpm -C apps/admin-ui dev",
+    "start:prod": "dotenvx run -f packages/config/environments/.env.production -- node apps/api/dist/index.js",
     "build": "npm-run-all build:*",
-    "build:packages": "pnpm -C packages/db build && pnpm -C packages/config build && pnpm -C packages/search-core build",
+    "build:packages": "pnpm -C packages/database build && pnpm -C packages/config build && pnpm -C packages/search-core build",
     "build:api": "pnpm -C apps/api build",
+    "build:api:prod": "pnpm db:generate && pnpm build:packages && pnpm build:api",
     "build:admin-ui": "pnpm -C apps/admin-ui build",
     "typecheck": "tsc -b -v --noEmit",
-    "typecheck:packages": "pnpm -C packages/db -s typecheck && pnpm -C packages/config -s typecheck && pnpm -C packages/search-core -s typecheck",
+    "typecheck:watch": "tsc -b --watch",
+    "typecheck:packages": "pnpm -C packages/database -s typecheck && pnpm -C packages/config -s typecheck && pnpm -C packages/search-core -s typecheck",
     "typecheck:api": "pnpm -C apps/api -s typecheck",
     "typecheck:admin-ui": "pnpm -C apps/admin-ui -s typecheck",
-    "db:migrate": "pnpm -C packages/db run prisma:migrate",
-    "db:generate": "pnpm -C packages/db run prisma:generate",
-    "db:deploy": "pnpm -C packages/db run prisma:deploy",
-    "db:format": "pnpm -C packages/db run prisma:format",
-    "db:push": "pnpm -C packages/db exec prisma db push"
+    "db:migrate": "pnpm -C packages/database run prisma:migrate",
+    "db:generate": "pnpm -C packages/database run prisma:generate",
+    "db:deploy": "pnpm -C packages/database run prisma:deploy",
+    "db:format": "pnpm -C packages/database run prisma:format",
+    "db:push": "pnpm -C packages/database exec prisma db push",
+    "db:seed": "dotenvx run -f packages/config/environments/.env.development -- pnpm -C packages/database run prisma:seed",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --fix .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --fix .",
+    "prepare": "husky"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild"
+    ]
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
+    "@dotenvx/dotenvx": "^1.34.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.11.19",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
-    "eslint": "^9.32.0",
-    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "jest-cucumber": "^4.5.0",
     "lint-staged": "^16.1.4",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.6.2"
+    "ts-jest": "^29.4.6",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.27.0",
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,json,css}": [
+      "biome check --fix --no-errors-on-unmatched"
+    ]
+  }
 }
