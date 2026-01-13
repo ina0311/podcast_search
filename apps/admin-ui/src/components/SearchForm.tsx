@@ -1,24 +1,24 @@
-import React, { useState, FormEvent } from 'react';
+import { type FormEvent, useState } from 'react'
 
 interface Episode {
-  id: number;
-  title: string;
-  url: string;
+  id: number
+  title: string
+  url: string
 }
 
 type Props = {
-  onResults: (episodes: Episode[]) => void;
-};
+  onResults: (episodes: Episode[]) => void
+}
 
 export default function SearchForm({ onResults }: Props) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    onResults(data.episodes || []);
-  };
+    e.preventDefault()
+    const res = await fetch(`/search?q=${encodeURIComponent(query)}`)
+    const data = await res.json()
+    onResults(data.episodes || [])
+  }
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8 }}>
@@ -32,5 +32,5 @@ export default function SearchForm({ onResults }: Props) {
         検索
       </button>
     </form>
-  );
-} 
+  )
+}
