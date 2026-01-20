@@ -5,11 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate:dev": "dotenvx run -f environments/.env.development -- node -e \"import('./src/index.js').then(m => console.log('✅ Config validated'))\"",
+    "validate:prod": "dotenvx run -f environments/.env.production -- node -e \"import('./src/index.js').then(m => console.log('✅ Config validated'))\""
   },
   "dependencies": {
-    "zod": "^3.23.8",
-    "dotenv": "^17.2.1"
+    "zod": "^4.1.5"
   }
 }

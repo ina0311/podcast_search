@@ -42,6 +42,7 @@ const EnvSchema = z.object({
 // 利用側
 import { env } from '@podcast_search/config';
 
+// モジュール読み込み時に自動的に環境変数が検証される
 // env.NEW_REQUIRED_VAR は string 型
 // env.NEW_OPTIONAL_VAR は string | undefined 型
 ```
@@ -67,20 +68,34 @@ services:
 | NEW_OPTIONAL_VAR | - | 説明 | - |
 ```
 
-## optionalNonEmptyString ヘルパー
+## 環境変数の読み込み方法
 
-空文字を `undefined` として扱うプリプロセッサ（既に定義済み）:
+### 自動検証
+
+`@podcast_search/config`パッケージをインポートすると、モジュール読み込み時に自動的に環境変数が検証されます：
 
 ```typescript
-const optionalNonEmptyString = z.preprocess(
-  (value) => {
-    if (typeof value === 'string' && value.trim() === '') {
-      return undefined;
-    }
-    return value;
-  },
-  z.string().min(1).optional()
-);
+// apps/api/src/index.ts など
+import { env } from '@podcast_search/config';
+
+// すぐに使用可能（検証済み）
+const port = env.PORT;
+const dbUrl = env.DATABASE_URL;
+```
+
+### dotenvxの使用
+
+- `dotenvx`は**ルートのpackage.jsonのscriptsでのみ使用**します
+- 各アプリ/パッケージのpackage.jsonでは使用しません
+- 環境変数は`@podcast_search/config`パッケージ経由で読み込みます
+
+```json
+// ルートのpackage.json
+{
+  "scripts": {
+    "dev": "dotenvx run -f packages/config/environments/.env.development -- npm-run-all -p dev:*"
+  }
+}
 ```
 
 ## チェックリスト
