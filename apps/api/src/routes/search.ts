@@ -2,6 +2,7 @@ import { env } from '@podcast_search/config'
 import { EpisodeRepository } from '@podcast_search/database'
 import { SearchCore, SearchQuerySchema } from '@podcast_search/search-core'
 import { Hono } from 'hono'
+import { z } from 'zod'
 
 const episodeRepository = new EpisodeRepository()
 
@@ -22,7 +23,7 @@ const searchRouter = new Hono().get('/', async (c) => {
   const limitRaw = c.req.query('limit')
   const parsed = SearchQuerySchema.safeParse({ q, limit: limitRaw })
   if (!parsed.success) {
-    return c.json({ error: 'Invalid query', issues: parsed.error.format() }, 400)
+    return c.json({ error: 'Invalid query', issues: z.treeifyError(parsed.error) }, 400)
   }
   const { q: query, limit } = parsed.data
 
