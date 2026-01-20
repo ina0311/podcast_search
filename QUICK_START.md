@@ -2,9 +2,10 @@
 
 ## 必要なソフトウェア
 
-- **Node.js**: v18 以上
+- **Node.js**: v18 以上（Supabase CLI を使う場合は v20 以上）
 - **pnpm**: v10.14.0
-- **PostgreSQL**: v16 推奨
+- **Docker Desktop**: Supabase CLI を使用する場合
+- **Supabase CLI**: ローカル開発環境用（推奨）
 - **Qdrant**: v1.8+
 
 ## セットアップ
@@ -21,7 +22,72 @@ pnpm install
 
 ### 2. データベースとQdrantの起動
 
-#### 方法A: Docker Compose（推奨）
+#### 方法A: Supabase CLI + Docker Compose（推奨）
+
+```bash
+# 1. Supabase CLI をインストール（未インストールの場合）
+# macOS
+brew install supabase/tap/supabase
+
+# 2. Supabase プロジェクトを初期化（初回のみ）
+cd packages/database
+supabase init
+
+# 3. Supabase ローカルスタックを起動（PostgreSQL + Studio + その他）
+supabase start
+
+# 4. 環境変数を設定（.env.development または環境変数）
+export DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
+
+# 5. Prisma マイグレーションを適用
+cd ../..
+pnpm db:generate
+pnpm db:deploy
+
+# 6. Qdrant を起動（docker-compose.yml を使用）
+docker compose up -d qdrant
+
+# 停止
+supabase stop  # Supabase を停止
+docker compose down  # Qdrant を停止
+```
+
+**Supabase CLI の接続情報:**
+- **DB URL（ローカル）**: `postgresql://postgres:postgres@localhost:54322/postgres`
+- **DB URL（docker-compose 内）**: `postgresql://postgres:postgres@host.docker.internal:54322/postgres`
+- **Studio URL**: http://localhost:54323（データベース管理UI）
+
+#### 方法B: Docker Compose（従来の方法 - PostgreSQL のみ）
+
+```bash
+# 1. Supabase CLI をインストール（未インストールの場合）
+# macOS
+brew install supabase/tap/supabase
+
+# 2. Supabase プロジェクトを初期化（初回のみ）
+cd packages/database
+supabase init
+
+# 3. Supabase ローカルスタックを起動（PostgreSQL + Studio + その他）
+supabase start
+
+# 4. 環境変数を設定
+export DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
+
+# 5. Prisma マイグレーションを適用
+cd ../..
+pnpm db:generate
+pnpm db:deploy
+
+# 停止
+supabase stop
+```
+
+**Supabase CLI の接続情報:**
+- **DB URL**: `postgresql://postgres:postgres@localhost:54322/postgres`
+- **Studio URL**: http://localhost:54323（データベース管理UI）
+
+#### 方法C: Docker Compose（従来の方法 - PostgreSQL のみ）
 
 ```bash
 # バックエンドサービスを起動（PostgreSQL + Qdrant + API）
@@ -34,7 +100,7 @@ pnpm install
 ./compose-backend.sh down
 ```
 
-#### 方法B: Linux環境（Back Agent用）
+#### 方法D: Linux環境（Back Agent用）
 
 ```bash
 # 自動セットアップ（Linux専用）
@@ -65,7 +131,9 @@ pnpm run dev:admin-ui   # Admin UI のみ
 |---------|--------|-----|
 | API Server | 3001 | http://localhost:3001 |
 | Admin UI | 5173 | http://localhost:5173 |
-| PostgreSQL | 5432 | localhost:5432 |
+| Supabase PostgreSQL | 54322 | postgresql://postgres:postgres@localhost:54322/postgres |
+| Supabase Studio | 54323 | http://localhost:54323 |
+| Supabase API | 54321 | http://localhost:54321 |
 | Qdrant | 6333 | http://localhost:6333 |
 
 ## トラブルシューティング

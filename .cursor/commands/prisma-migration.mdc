@@ -1,0 +1,69 @@
+# Prismaマイグレーション作成コマンド
+
+このコマンドは、Prismaマイグレーションを作成し、自動的にRLS設定を追加します。
+
+## 使用方法
+
+```
+マイグレーションを作成して、RLS設定を追加してください
+```
+
+または
+
+```
+新しいテーブル {TableName} を追加するマイグレーションを作成してください
+```
+
+## 実行手順
+
+### 1. Prismaスキーマを編集
+
+`packages/database/src/prisma/models/` 配下の `.prisma` ファイルを編集
+
+### 2. マイグレーション作成
+
+```bash
+cd packages/database
+pnpm prisma:migrate
+```
+
+または、プロジェクトルートから：
+
+```bash
+pnpm db:migrate
+```
+
+### 3. マイグレーションファイルの確認
+
+作成されたマイグレーションファイル（`packages/database/src/prisma/migrations/{timestamp}_{name}/migration.sql`）を確認：
+
+- **RLS設定は自動適用**: イベントトリガー（`auto_enable_rls_trigger`）が `CREATE TABLE` 実行時に自動でRLS設定を適用します
+- **追加の設定は不要**: 統一された権限設定で問題ない場合は、追加の設定は不要です
+- **カスタム権限が必要な場合のみ**: 統一設定と異なる権限が必要な場合のみ、手動でRLS設定を追加してください
+
+### 4. マイグレーション実行
+
+```bash
+pnpm db:migrate
+```
+
+## エージェント向けの指示
+
+マイグレーションファイルを作成・編集する際は、以下のルールに従ってください：
+
+1. **RLS設定は自動適用**: `CREATE TABLE` 文が実行されると、イベントトリガーが自動でRLS設定を適用します
+2. **追加の設定は不要**: 統一された権限設定で問題ない場合は、追加の設定は不要です
+3. **統一された権限設定**: イベントトリガーが自動で以下の統一設定を適用します：
+   - `anon`: 読み取りのみ（SELECT）
+   - `authenticated`: 全操作可能（SELECT, INSERT, UPDATE, DELETE）
+4. **カスタム権限が必要な場合のみ**: 統一設定と異なる権限が必要な場合のみ、手動でRLS設定を記述してください
+
+## カスタム権限が必要な場合
+
+ユーザーが明示的にカスタム権限を要求した場合のみ、統一された権限設定を変更してください。その場合は、変更理由をコメントで明記してください。
+
+## 参考
+
+- ルールファイル: `.cursor/rules/prisma-migration.mdc`
+- 基本RLS設定: `packages/database/src/prisma/migrations/00000000000000_setup_rls/migration.sql`
+- 実装例: `packages/database/src/prisma/migrations/20260112124638_init/migration.sql`

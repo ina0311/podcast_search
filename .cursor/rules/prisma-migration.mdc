@@ -1,0 +1,105 @@
+---
+description: Prismaマイグレーションファイル作成時のパターン
+globs:
+  - packages/database/src/prisma/migrations/**/*.sql
+---
+
+# Prismaマイグレーションファイル作成パターン
+
+## 基本方針
+
+1. **イベントトリガーに自動設定を任せる**: テーブル作成時にイベントトリガーが自動でRLS設定を適用する
+2. **統一された権限**: 明示的な依頼がない限り、以下の統一された権限設定が自動適用される
+   - `anon`: 読み取りのみ（SELECT）
+   - `authenticated`: 全操作可能（SELECT, INSERT, UPDATE, DELETE）
+3. **カスタム権限が必要な場合のみ明示的に設定**: 統一設定と異なる権限が必要な場合のみ、マイグレーションファイルで明示的に設定する
+
+## RLS設定について
+
+**通常は設定不要**: イベントトリガー（`auto_enable_rls_trigger`）が `CREATE TABLE` 実行時に自動でRLS設定を適用します。
+
+```sql
+-- CreateTable
+CREATE TABLE "NewTable" (
+  -- ...
+);
+
+-- RLS設定は自動で適用されるため、追加の設定は不要
+```
+
+## 複数テーブル作成時のパターン
+
+複数のテーブルを作成する場合も、イベントトリガーが自動で各テーブルにRLS設定を適用します：
+
+```sql
+-- CreateTable
+CREATE TABLE "Table1" (
+  -- ...
+);
+
+-- CreateTable
+CREATE TABLE "Table2" (
+  -- ...
+);
+
+-- CreateTable
+CREATE TABLE "Table3" (
+  -- ...
+);
+
+-- インデックス、外部キーなどの設定...
+
+-- RLS設定は自動で適用されるため、追加の設定は不要
+```
+
+## カスタム権限が必要な場合
+
+明示的な依頼がある場合のみ、統一された権限設定を変更する：
+
+```sql
+-- 例: anonロールからのアクセスを完全に拒否する場合
+ALTER TABLE "PrivateTable" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON "PrivateTable" FROM public;
+DROP POLICY IF EXISTS "anon_select" ON "PrivateTable";
+DROP POLICY IF EXISTS "authenticated_all" ON "PrivateTable";
+CREATE POLICY "authenticated_all" ON "PrivateTable" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- anonロールのポリシーは作成しない（デフォルトで拒否）
+
+-- 例: 特定の条件でのみアクセスを許可する場合
+ALTER TABLE "RestrictedTable" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON "RestrictedTable" FROM public;
+DROP POLICY IF EXISTS "anon_select" ON "RestrictedTable";
+DROP POLICY IF EXISTS "authenticated_all" ON "RestrictedTable";
+CREATE POLICY "anon_select" ON "RestrictedTable" FOR SELECT TO anon USING (status = 'PUBLISHED');
+CREATE POLICY "authenticated_all" ON "RestrictedTable" FOR ALL TO authenticated USING (true) WITH CHECK (true);
+```
+
+**注意**: カスタム権限が必要な場合は、`setup_table_rls()` 関数を使用せず、手動でRLS設定を記述してください。
+
+## テーブル名の取得方法
+
+マイグレーションファイル内で `CREATE TABLE` 文を検索し、テーブル名を抽出する：
+
+```sql
+-- 例: CREATE TABLE "Podcast" の場合、テーブル名は "Podcast"
+-- 例: CREATE TABLE "PodcastEpisode" の場合、テーブル名は "PodcastEpisode"
+```
+
+## 除外対象
+
+以下のテーブルはRLS設定の対象外：
+
+- `_prisma_migrations`: Prismaの内部テーブル（別途設定済み）
+
+## チェックリスト
+
+マイグレーションファイルを作成・編集する際：
+
+- [ ] `CREATE TABLE` 文を作成（RLS設定は自動で適用される）
+- [ ] カスタム権限が必要な場合のみ、手動でRLS設定を記述
+- [ ] 統一された権限設定で問題ない場合は、追加の設定は不要
+
+## 参考
+
+- 基本RLS設定: `packages/database/src/prisma/migrations/00000000000000_setup_rls/migration.sql`
+- 実装例: `packages/database/src/prisma/migrations/20260112124638_init/migration.sql`

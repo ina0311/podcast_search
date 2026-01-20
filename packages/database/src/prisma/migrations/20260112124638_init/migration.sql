@@ -72,3 +72,5 @@ ALTER TABLE "PodcastEpisode" ADD CONSTRAINT "PodcastEpisode_podcastId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "TranscriptSegment" ADD CONSTRAINT "TranscriptSegment_episodeId_fkey" FOREIGN KEY ("episodeId") REFERENCES "PodcastEpisode"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- 注意: RLS設定はイベントトリガー（auto_enable_rls_trigger）が自動で適用します

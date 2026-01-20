@@ -104,15 +104,29 @@ model PostTag {
 # 1. スキーマ編集後、マイグレーション作成
 pnpm db:migrate
 
-# 2. Prisma Client 再生成（自動で実行されるが念のため）
+# 2. マイグレーションファイルにRLS設定を追加
+# 作成されたマイグレーションファイルを開き、CREATE TABLE文の後にRLS設定を追加
+# 詳細は .cursor/rules/prisma-migration.mdc を参照
+
+# 3. Prisma Client 再生成（自動で実行されるが念のため）
 pnpm db:generate
 
-# 3. 本番デプロイ時
+# 4. 本番デプロイ時
 pnpm db:deploy
 
-# 4. スキーマのフォーマット
+# 5. スキーマのフォーマット
 pnpm db:format
 ```
+
+## RLS設定について
+
+**自動適用**: 新しいテーブルを作成する際、イベントトリガー（`auto_enable_rls_trigger`）が自動でRLS設定を適用します。
+
+- 統一された権限設定が自動で適用されます（`anon`: 読み取りのみ、`authenticated`: 全操作可能）
+- 追加の設定は不要です
+- カスタム権限が必要な場合のみ、手動でRLS設定を追加してください
+
+詳細は `.cursor/rules/prisma-migration.mdc` を参照してください。
 
 ## チェックリスト
 
@@ -121,5 +135,6 @@ pnpm db:format
 - [ ] 適切なインデックスを追加（FK、検索対象）
 - [ ] リレーションの `onDelete` を検討
 - [ ] `pnpm db:migrate` でマイグレーション作成
+- [ ] RLS設定は自動で適用される（追加の設定は不要）
 - [ ] `pnpm db:generate` でクライアント再生成
 - [ ] `docs/data_model.md` を更新

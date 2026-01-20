@@ -1,5 +1,13 @@
-import { prisma } from '../client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { getSeedEnv } from '../../../config/src/env/seed'
+import { PrismaClient } from '../generated/prisma/client'
+
 import { episodes, podcasts, transcripts } from './data'
+
+const { DATABASE_URL } = getSeedEnv()
+
+const adapter = new PrismaPg({ connectionString: DATABASE_URL })
+const prisma = new PrismaClient({ adapter })
 
 /**
  * データベースをシードする
