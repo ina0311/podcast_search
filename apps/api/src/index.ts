@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server'
 import { env } from '@podcast_search/config'
 import { Hono } from 'hono'
+
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
@@ -17,13 +18,15 @@ const app = new Hono()
   .route('/search', searchRouter)
 
 // Middlewares (applied separately to preserve type inference)
+// CORS設定: 環境変数 ALLOWED_ORIGINS があればそれを使用、なければ開発環境のデフォルト
+const allowedOrigins = env.ALLOWED_ORIGINS
+  ? env.ALLOWED_ORIGINS.split(',').map((origin: string) => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:8080'] // 開発環境のデフォルト
+
 app.use(
   '*',
   cors({
-    origin: [
-      'http://localhost:5173', // vite dev
-      'http://localhost:8080' // docker admin-ui
-    ],
+    origin: allowedOrigins,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization']
   })
