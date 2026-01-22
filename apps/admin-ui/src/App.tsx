@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import EpisodeDetail from './pages/EpisodeDetail'
 import EpisodeList from './pages/EpisodeList'
@@ -83,6 +84,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )
 }

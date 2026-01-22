@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchEpisodes } from '../api'
 
 export default function EpisodeList() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['episodes'],
     queryFn: fetchEpisodes
   })
@@ -14,12 +14,33 @@ export default function EpisodeList() {
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">エラーが発生しました</div>
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-4">エラーが発生しました</div>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          再試行
+        </button>
+      </div>
+    )
   }
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Episode 一覧</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Episode 一覧</h2>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+        >
+          {isFetching ? '更新中...' : '🔄 再読み込み'}
+        </button>
+      </div>
       <div className="space-y-3">
         {episodes?.map((episode) => (
           <Link

@@ -11,6 +11,6 @@ export default defineConfig({
     /^\.prisma\/.*/,
     /^@prisma\/.*/
   ],
-  dts: false,
+  dts: true,
   clean: true
 })
