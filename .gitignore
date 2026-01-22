@@ -16,3 +16,6 @@ yarn-debug.log*
 coverage
 .pnpm-store
 pnpm-store
+
+# Turborepo
+.turbo

@@ -22,10 +22,7 @@ FROM base AS builder
 COPY . .
 RUN pnpm install --frozen-lockfile \
   && pnpm -C packages/database exec prisma generate \
-  && pnpm --filter @podcast_search/config build \
-  && pnpm --filter @podcast_search/search-core build \
-  && pnpm --filter @podcast_search/database build \
-  && pnpm --filter api build
+  && pnpm turbo run build --filter=api
 
 # -----------------------------------------------------------------------------
 # Production Stage

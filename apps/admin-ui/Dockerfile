@@ -19,8 +19,12 @@ CMD ["sh", "-c", "pnpm config set store-dir /pnpm/store && pnpm install && pnpm 
 # Builder Stage (for production)
 # -----------------------------------------------------------------------------
 FROM base AS builder
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 COPY . .
-RUN pnpm install --frozen-lockfile && pnpm --filter admin-ui build
+RUN pnpm install --frozen-lockfile \
+  && pnpm -C packages/database exec prisma generate \
+  && pnpm turbo run build --filter=admin-ui
 
 # -----------------------------------------------------------------------------
 # Production Stage
