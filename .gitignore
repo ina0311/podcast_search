@@ -19,3 +19,7 @@ pnpm-store
 
 # Turborepo
 .turbo
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+CLAUDE.local.md
