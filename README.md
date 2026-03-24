@@ -11,7 +11,7 @@
 - ベクトルDB: Qdrant (Docker)  
 - Embedding: OpenAI Embedding API (text-embedding-3-small)  
 - 音声文字起こし: Whisper CLI  
-- デプロイ: Render (Docker) / ローカル docker-compose  
+- デプロイ: Vercel (Frontend) + AWS App Runner (Backend) + Supabase (Database) / ローカル docker-compose  
 - Discord連携: discord.js  
 
 ## 技術選定理由
@@ -67,8 +67,10 @@
 - Whisper CLI
   - 高精度の音声文字起こしを簡易に扱える。バッチ/自動化に適し、パイプラインに組み込みやすい
 
-- デプロイ（Render / ローカル）
-  - 軽量なローカル開発環境。Renderは小規模構成での運用開始が容易
+- デプロイ（Vercel + AWS App Runner + Supabase / ローカル）
+  - 本番環境: Vercel で Frontend、AWS App Runner で Backend、Supabase で Database
+  - 軽量なローカル開発環境（docker-compose）
+  - 詳細は [デプロイガイド](docs/DEPLOYMENT_GUIDE.md) を参照
 
 - discord.js
   - エコシステムとドキュメントが充実。Bot作成が容易で通知・連携に適する
@@ -123,16 +125,25 @@ const episodes = await repo.findByIds([1, 2, 3]);
 
 **責務**: ベクトル検索機能に特化（RDBアクセスは持たない）
 
-- OpenAI Embeddingの生成
-- Qdrantへのベクトル検索
+- **抽象化レイヤー**: Embedding Provider と Vector Store を抽象化し、実装を切り替え可能
+- OpenAI Embedding / AWS Bedrock Titan Embedding に対応
+- Qdrant / AWS OpenSearch / AWS Bedrock Knowledge Bases に対応
 - 検索クエリのZodスキーマ
 
 ```typescript
+// 環境変数から自動選択（推奨）
+import { createSearchCoreFromEnv } from '@podcast_search/search-core';
+const searchCore = createSearchCoreFromEnv();
+const hits = await searchCore.searchByQuery('キーワード', 10);
+
+// または明示的に指定
 import { SearchCore } from '@podcast_search/search-core';
 const searchCore = new SearchCore({ openaiApiKey, qdrantUrl });
 const hits = await searchCore.searchByQuery('キーワード', 10);
 // hits = [{ id, score, payload: { episodeId } }]
 ```
+
+**AWS移行**: 環境変数を変更するだけで、AWS Bedrock/OpenSearch に切り替え可能。詳細は [AWS移行ガイド](docs/aws_migration_guide.md) を参照。
 
 ### 設計原則
 
@@ -158,6 +169,18 @@ Docker 版のバックエンド（API + Postgres + Qdrant）は、どこから�
 
 任意の Docker Compose サブコマンド（`logs`, `down`, など）は、第2引数以降に渡してください。内部的には `docker compose -f /Users/.../docker-compose.yml --profile backend ...` を実行します。
 
+## 技術選定の考え方
+
+本プロジェクトでは、以下の理由から Qdrant + OpenAI + Whisper CLI を採用しました：
+
+1. **コスト効率**: 小規模プロジェクトでは無料枠または低コストで運用可能
+2. **実装の簡潔性**: シンプルで保守しやすいアーキテクチャ
+3. **柔軟性**: ベンダーロックインを避け、将来の選択肢を保持
+
+AWS Bedrock/ベクトルサービスへの移行も検討しましたが、現時点では過剰な投資と判断しました。詳細は [AWS移行評価](docs/aws_bedrock_evaluation.md) を参照してください。
+
+**ただし、AWS移行を容易にするため、抽象化レイヤーを実装しています。** 将来的にスケール要件が明確になった際は、環境変数を変更するだけで AWS に移行できます。詳細は [AWS移行ガイド](docs/aws_migration_guide.md) を参照してください。
+
 ## 詳細ドキュメント
 
 - [アーキテクチャ](docs/architecture.md)
@@ -166,7 +189,9 @@ Docker 版のバックエンド（API + Postgres + Qdrant）は、どこから�
 - [検索フロー](docs/search_flow.md)
 - [環境変数と設定](docs/configuration.md)
 - [設計方針・改善タスク](docs/improvements.md)
-- [デプロイ](docs/deployment.md)
+- [デプロイ](docs/deployment.md) - [完全デプロイガイド](docs/DEPLOYMENT_GUIDE.md)（Cursor エージェント対応）
+- [AWS移行ガイド](docs/aws_migration_guide.md) - AWS Bedrock/OpenSearch への移行手順
+- [AWS移行評価](docs/aws_bedrock_evaluation.md) - 技術選定の評価と判断根拠
 - [Contributing](docs/contributing.md)
 - [AWSインフラ構成](infra/aws/README.md)
 

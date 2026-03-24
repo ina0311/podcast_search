@@ -5,6 +5,7 @@
 ## 現状（実装ベースの前提）
 - コレクション: `transcript_segments`
 - 埋め込みモデル: OpenAI `text-embedding-3-small`
+  - 参考: [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
 - ペイロード: `episodeId`（最小限）
 - 検索: クエリ埋め込み → 近傍検索 → `episodeId` をユニーク化して RDB から取得
 

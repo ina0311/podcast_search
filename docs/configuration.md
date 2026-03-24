@@ -12,6 +12,8 @@
 ### 任意（機能制限あり）
 
 - `OPENAI_API_KEY` : OpenAI API キー。未設定でも API は起動しますが、`/search` エンドポイントは 503 を返し検索機能が無効になります。
+- `OPENAI_EMBEDDING_MODEL` : Embedding モデル（デフォルト: `text-embedding-3-small`）
+  - 参考: [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
 
 `.env` 例:
 

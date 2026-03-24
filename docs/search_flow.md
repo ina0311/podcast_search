@@ -6,6 +6,8 @@
 - `TranscriptSegment` 単位でベクトル化  
 - 生成されたベクトルは Qdrant の `transcript_segments` コレクションに保存されます。
 
+**参考**: [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
+
 ## 2. Qdrant 近傍検索
 
 ```ts
