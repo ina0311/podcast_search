@@ -10,6 +10,13 @@ build
 # Local unencrypted env (for local overrides)
 .env.local
 .env.*.local
+
+# Environment-specific config files (unencrypted)
+# .env.development は開発用サンプルとしてコミット可
+packages/config/environments/.env.staging
+packages/config/environments/.env.production
+packages/config/environments/.env.*
+!packages/config/environments/.env.development
 pnpm-debug.log*
 npm-debug.log*
 yarn-debug.log*
