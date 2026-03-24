@@ -1,23 +1,36 @@
-import { env } from '@podcast_search/config'
 import { EpisodeRepository } from '@podcast_search/database'
-import { SearchCore, SearchQuerySchema } from '@podcast_search/search-core'
+import { createSearchCoreFromEnv, SearchQuerySchema } from '@podcast_search/search-core'
 import { Hono } from 'hono'
 import { z } from 'zod'
+import logger from '../lib/logger'
 
 const episodeRepository = new EpisodeRepository()
 
 // SearchCore は重いクライアントを生成するため、リクエストごとに生成せず共有する
-const searchCore = env.OPENAI_API_KEY
-  ? new SearchCore({
-      openaiApiKey: env.OPENAI_API_KEY,
-      qdrantUrl: env.QDRANT_URL ?? 'http://localhost:6333',
-      qdrantApiKey: env.QDRANT_API_KEY
-    })
-  : null
+// 環境変数に基づいて適切な実装を自動選択（AWS移行時は環境変数を変更するだけ）
+let searchCore: ReturnType<typeof createSearchCoreFromEnv> | null = null
+let searchCoreInitError: string | null = null
+
+try {
+  searchCore = createSearchCoreFromEnv()
+} catch (error) {
+  searchCoreInitError = error instanceof Error ? error.message : String(error)
+  logger.error(
+    { error: searchCoreInitError },
+    '[SearchCore] Initialization failed. Search endpoint will return 503.'
+  )
+  searchCore = null
+}
 
 const searchRouter = new Hono().get('/', async (c) => {
   if (!searchCore) {
-    return c.json({ error: 'Search is disabled because OPENAI_API_KEY is not configured.' }, 503)
+    return c.json(
+      {
+        error: 'Search is temporarily unavailable.',
+        reason: searchCoreInitError ?? 'Unknown initialization error'
+      },
+      503
+    )
   }
   const q = c.req.query('q')
   const limitRaw = c.req.query('limit')

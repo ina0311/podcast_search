@@ -1,10 +1,10 @@
 import { serve } from '@hono/node-server'
 import { env } from '@podcast_search/config'
 import { Hono } from 'hono'
-
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
+import logger from './lib/logger'
 
 import episodesRouter from './routes/episodes'
 import podcastsRouter from './routes/podcasts'
@@ -36,7 +36,7 @@ app.use('*', secureHeaders())
 
 app.notFound((c) => c.json({ error: 'Not Found' }, 404))
 app.onError((err, c) => {
-  console.error(err)
+  logger.error({ err }, 'Unhandled error')
   return c.json({ error: 'Internal Server Error' }, 500)
 })
 
@@ -44,5 +44,5 @@ app.onError((err, c) => {
 export type AppType = typeof app
 
 const port = env.PORT
-console.log(`🚀 API listening on http://localhost:${port}`)
+logger.info({ port }, 'API server started')
 serve({ fetch: app.fetch, port })

@@ -13,7 +13,7 @@ const podcastsRouter = new Hono()
     const idParam = c.req.param('id')
     const parsed = z.coerce.number().int().positive().safeParse(idParam)
     if (!parsed.success) {
-      return c.json({ error: 'Invalid id' }, 400)
+      return c.json({ error: 'Invalid id', issues: z.treeifyError(parsed.error) }, 400)
     }
     const id = parsed.data
     const podcast = await podcastRepository.findWithEpisodes(id)
