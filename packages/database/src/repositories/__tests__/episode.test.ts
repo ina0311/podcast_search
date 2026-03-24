@@ -1,3 +1,4 @@
+import type { DbClient } from '../../client'
 import type { EpisodeStatus } from '../../generated/prisma/client'
 import {
   createMockEpisode,
@@ -13,7 +14,7 @@ describe('EpisodeRepository', () => {
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient()
-    repository = new EpisodeRepository(mockPrisma as any)
+    repository = new EpisodeRepository(mockPrisma as unknown as DbClient)
   })
 
   describe('findById', () => {

@@ -17,5 +17,6 @@ model PodcastEpisode {
   transcripts          TranscriptSegment[]
 
   @@unique([podcastId, enclosureUrl])
+  @@index([podcastId, publishedAt(sort: Desc)])
 }
 
