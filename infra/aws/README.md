@@ -3,59 +3,59 @@
 ## アーキテクチャ
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │              VPC (10.0.0.0/16)          │
-                    │                                         │
-┌──────────┐        │  ┌─────────────────────────────────┐   │
-│  Vercel  │ ─────► │  │      Public Subnet              │   │
-│ admin-ui │  HTTPS │  │  ┌───────────┐  ┌───────────┐   │   │
-└──────────┘        │  │  │App Runner │  │  Qdrant   │   │   │
-                    │  │  │   API     │  │   EC2     │   │   │
-                    │  │  └─────┬─────┘  └─────┬─────┘   │   │
-                    │  └────────┼──────────────┼─────────┘   │
-                    │           │              │             │
-                    │  ┌────────┼──────────────┼─────────┐   │
-                    │  │        ▼   Private Subnet       │   │
-                    │  │  ┌───────────┐                  │   │
-                    │  │  │    RDS    │                  │   │
-                    │  │  │ PostgreSQL│                  │   │
-                    │  │  └───────────┘                  │   │
-                    │  └─────────────────────────────────┘   │
-                    └─────────────────────────────────────────┘
+┌─────────────┐
+│   Vercel    │  admin-ui (SPA)
+│  (Frontend) │
+└──────┬──────┘
+       │ HTTPS
+       │
+┌──────▼─────────────────────────────────────┐
+│           AWS                              │
+│  ┌──────────────────────────────────────┐   │
+│  │  App Runner Service                  │   │
+│  │  (自動 HTTPS エンドポイント)          │   │
+│  └──────────────────────────────────────┘   │
+└──────────────────────────────────────────────┘
+       │                          │
+       │ HTTPS                    │ HTTPS
+       │                          │
+       ▼                          ▼
+┌──────────────┐          ┌──────────────┐
+│  Supabase    │          │ Qdrant Cloud │
+│  PostgreSQL  │          │  (推奨)      │
+│  (外部)      │          └──────────────┘
+└──────────────┘
 ```
 
-## 1. RDS PostgreSQL
+**注意**: VPC Connector は不要（Supabase は外部サービスなので直接 HTTPS 接続）
 
-### AWS CLI で作成
+## インフラ構築方法
+
+詳細は [`terraform/README.md`](./terraform/README.md) を参照してください。
+
+### クイックスタート
 
 ```bash
-# サブネットグループ作成
-aws rds create-db-subnet-group \
-  --db-subnet-group-name podcast-db-subnet \
-  --db-subnet-group-description "Podcast DB subnet group" \
-  --subnet-ids subnet-xxx subnet-yyy
-
-# RDS インスタンス作成
-aws rds create-db-instance \
-  --db-instance-identifier podcast-db \
-  --db-instance-class db.t4g.micro \
-  --engine postgres \
-  --engine-version 16 \
-  --master-username postgres \
-  --master-user-password <YOUR_PASSWORD> \
-  --allocated-storage 20 \
-  --db-name podcast \
-  --vpc-security-group-ids sg-xxx \
-  --db-subnet-group-name podcast-db-subnet \
-  --no-publicly-accessible \
-  --backup-retention-period 7
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を編集
+terraform init
+terraform plan
+terraform apply
 ```
 
-### 接続文字列
+## 1. Supabase PostgreSQL
 
-```
-DATABASE_URL=postgresql://postgres:<PASSWORD>@podcast-db.xxx.ap-northeast-1.rds.amazonaws.com:5432/podcast
-```
+AWS RDS の代わりに Supabase（外部サービス）を使用します。
+
+### セットアップ手順
+
+1. [Supabase](https://supabase.com) でアカウント作成
+2. 新規プロジェクトを作成
+3. 接続文字列を取得（Session モード推奨）
+4. Terraform の `database_url` 変数に設定
+
+詳細は [`docs/deployment.md`](../../docs/deployment.md) を参照してください。
 
 ## 2. Qdrant
 
@@ -64,16 +64,11 @@ DATABASE_URL=postgresql://postgres:<PASSWORD>@podcast-db.xxx.ap-northeast-1.rds.
 1. https://cloud.qdrant.io でアカウント作成
 2. 無料クラスタを作成
 3. API キーとエンドポイントを取得
+4. Terraform の `qdrant_url` と `qdrant_api_key` 変数に設定
 
-```
-QDRANT_URL=https://xxx-xxx.aws.cloud.qdrant.io:6333
-QDRANT_API_KEY=your-api-key
-```
-
-### オプション B: EC2 にセルフホスト
+### オプション B: ローカル Docker（開発用）
 
 ```bash
-# EC2 インスタンス作成後、Docker で起動
 docker run -d \
   --name qdrant \
   -p 6333:6333 \
@@ -84,31 +79,34 @@ docker run -d \
 
 ## 3. App Runner 環境変数
 
-App Runner コンソールで以下を設定：
+Terraform で自動設定されます。以下の変数を `terraform.tfvars` で設定:
 
-| 変数名 | 値 |
-|--------|-----|
-| `NODE_ENV` | `production` |
-| `PORT` | `3000` |
-| `DATABASE_URL` | `postgresql://postgres:<PASSWORD>@<RDS_ENDPOINT>:5432/podcast` |
-| `QDRANT_URL` | `https://xxx.cloud.qdrant.io:6333` |
-| `OPENAI_API_KEY` | `sk-xxx` |
+| 変数名 | 説明 |
+|--------|------|
+| `database_url` | Supabase の接続文字列 |
+| `allowed_origins` | CORS 許可オリジン（Vercel の URL） |
+| `qdrant_url` | Qdrant Cloud URL（オプション） |
+| `qdrant_api_key` | Qdrant Cloud API キー（オプション） |
+| `openai_api_key` | OpenAI API キー（オプション） |
 
-## 4. セキュリティグループ
+## 4. セキュリティ
 
-### App Runner → RDS
-- RDS のセキュリティグループで App Runner VPC Connector からの 5432 を許可
+- App Runner は自動で HTTPS を提供（証明書管理不要）
+- Supabase は HTTPS 接続必須
+- CORS は Vercel のドメインのみ許可
+- 環境変数は Terraform の `sensitive = true` で保護
 
-### App Runner → Qdrant Cloud
-- アウトバウンド HTTPS (443) を許可（デフォルトで許可済み）
-
-## コスト目安（月額）
+## コスト目安（月額、1年経過後）
 
 | サービス | 構成 | 概算 |
 |---------|------|------|
-| App Runner | 0.25 vCPU, 0.5GB | ~$5 |
-| RDS | db.t4g.micro | ~$15 |
-| Qdrant Cloud | Free tier | $0 |
-| **合計** | | **~$20/月** |
+| App Runner | 0.25 vCPU, 0.5GB（低トラフィック） | ~$3.11 |
+| Amazon ECR | ストレージ 1-2GB | ~$0.10-0.20 |
+| Supabase | 無料枠内（500MB、50,000 MAU） | $0 |
+| Qdrant Cloud | 無料枠内（1GB RAM、4GB ディスク） | $0 |
+| Vercel | 無料枠内（Hobby Plan） | $0 |
+| **合計** | | **~$3.21-3.31/月** |
+
+詳細なコスト計算は [`docs/deployment.md`](../../docs/deployment.md) を参照してください。
 
 

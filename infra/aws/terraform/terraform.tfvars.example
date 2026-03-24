@@ -1,0 +1,28 @@
+# Terraform 変数設定例
+# このファイルをコピーして terraform.tfvars を作成し、実際の値を設定してください
+# terraform.tfvars は .gitignore に含まれているため、Git にコミットされません
+
+aws_region = "ap-northeast-1"
+project_name = "podcast-search"
+ecr_image_tag = "latest"
+
+# App Runner のリソース設定
+app_runner_cpu = "0.25"
+app_runner_memory = "0.5"
+app_runner_min_size = 1
+app_runner_max_size = 3
+
+# Supabase の接続文字列（Session モード推奨）
+# 例: postgresql://postgres.[project-ref]:[password]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres
+database_url = "postgresql://..."
+
+# CORS 許可オリジン（カンマ区切り）
+# Vercel の URL を設定（例: https://your-app.vercel.app）
+allowed_origins = "https://your-app.vercel.app"
+
+# Qdrant Cloud 設定（オプション）
+qdrant_url = "https://xxx.cloud.qdrant.io:6333"
+qdrant_api_key = "your-api-key"
+
+# OpenAI API キー（オプション）
+openai_api_key = "sk-xxx"
