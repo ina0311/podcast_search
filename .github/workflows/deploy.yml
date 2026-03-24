@@ -1,0 +1,137 @@
+name: Deploy (Migration + API)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - production
+
+env:
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: podcast-search-api
+  PROJECT_NAME: podcast-search
+
+jobs:
+  # 環境を決定
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - id: set-env
+        run: |
+          if [ "${{ inputs.environment }}" != "" ]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+  # 1. まずマイグレーションを実行
+  migrate:
+    needs: [setup]
+    uses: ./.github/workflows/migrate-database.yml
+    with:
+      environment: ${{ needs.setup.outputs.environment }}
+    secrets: inherit
+
+  # 2. マイグレーション完了後にデプロイ
+  deploy:
+    name: Build and Deploy
+    needs: [setup, migrate]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-Deploy
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/api/Dockerfile
+          target: prod
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: ./infra/aws/terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./infra/aws/terraform
+        env:
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_allowed_origins: ${{ secrets.ALLOWED_ORIGINS }}
+          TF_VAR_qdrant_url: ${{ secrets.QDRANT_URL }}
+          TF_VAR_qdrant_api_key: ${{ secrets.QDRANT_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          terraform plan \
+            -var="ecr_image_tag=${{ github.sha }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        id: terraform-apply
+        working-directory: ./infra/aws/terraform
+        env:
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_allowed_origins: ${{ secrets.ALLOWED_ORIGINS }}
+          TF_VAR_qdrant_url: ${{ secrets.QDRANT_URL }}
+          TF_VAR_qdrant_api_key: ${{ secrets.QDRANT_API_KEY }}
+          TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Get App Runner URL
+        id: get-url
+        working-directory: ./infra/aws/terraform
+        run: |
+          APP_RUNNER_URL=$(terraform output -raw app_runner_service_url)
+          echo "App Runner URL: $APP_RUNNER_URL"
+          echo "url=$APP_RUNNER_URL" >> $GITHUB_OUTPUT
+
+      - name: Deployment Summary
+        run: |
+          echo "### 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**App Runner URL:** \`${{ steps.get-url.outputs.url }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
