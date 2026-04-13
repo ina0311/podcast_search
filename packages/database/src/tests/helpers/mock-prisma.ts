@@ -25,6 +25,7 @@ export interface MockPrismaClient {
     findMany: jest.Mock
     count: jest.Mock
     create: jest.Mock
+    createMany: jest.Mock
     update: jest.Mock
     delete: jest.Mock
   }
@@ -56,6 +57,7 @@ export const createMockPrismaClient = (): MockPrismaClient => {
       findMany: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
+      createMany: jest.fn(),
       update: jest.fn(),
       delete: jest.fn()
     },

@@ -38,4 +38,20 @@ export class TranscriptRepository extends BaseRepository {
       where: { episodeId }
     })
   }
+
+  async bulkCreate(
+    segments: Array<{
+      episodeId: number
+      text: string
+      startMs: number
+      endMs: number
+      language?: string | null
+    }>
+  ): Promise<void> {
+    if (segments.length === 0) return
+    await this.db.transcriptSegment.createMany({
+      data: segments,
+      skipDuplicates: true
+    })
+  }
 }

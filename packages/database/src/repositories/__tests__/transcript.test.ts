@@ -1,12 +1,14 @@
-import {
-  createMockPrismaClient,
-  createMockTranscript,
-  type MockPrismaClient
-} from '../../tests/helpers/mock-prisma'
+jest.doMock('../../client', () => ({
+  prisma: {
+    transcriptSegment: {}
+  }
+}))
+
+import { createMockPrismaClient, createMockTranscript } from '../../tests/helpers/mock-prisma'
 import { TranscriptRepository } from '../transcript'
 
 describe('TranscriptRepository', () => {
-  let mockPrisma: MockPrismaClient
+  let mockPrisma: ReturnType<typeof createMockPrismaClient>
   let repository: TranscriptRepository
 
   beforeEach(() => {
@@ -142,6 +144,33 @@ describe('TranscriptRepository', () => {
       const result = await repository.countByEpisodeId(10)
 
       expect(result).toBe(0)
+    })
+  })
+
+  describe('bulkCreate', () => {
+    it('セグメントを createMany でまとめて保存する', async () => {
+      mockPrisma.transcriptSegment.createMany = jest.fn().mockResolvedValue({ count: 2 })
+
+      await repository.bulkCreate([
+        { episodeId: 1, text: 'こんにちは', startMs: 0, endMs: 2500 },
+        { episodeId: 1, text: '世界', startMs: 2500, endMs: 5000 }
+      ])
+
+      expect(mockPrisma.transcriptSegment.createMany).toHaveBeenCalledWith({
+        data: [
+          { episodeId: 1, text: 'こんにちは', startMs: 0, endMs: 2500 },
+          { episodeId: 1, text: '世界', startMs: 2500, endMs: 5000 }
+        ],
+        skipDuplicates: true
+      })
+    })
+
+    it('空配列のときは createMany を呼ばない', async () => {
+      mockPrisma.transcriptSegment.createMany = jest.fn()
+
+      await repository.bulkCreate([])
+
+      expect(mockPrisma.transcriptSegment.createMany).not.toHaveBeenCalled()
     })
   })
 })
