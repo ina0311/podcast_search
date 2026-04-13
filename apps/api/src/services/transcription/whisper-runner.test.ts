@@ -5,6 +5,7 @@ jest.mock('node:child_process', () => ({
 }))
 
 jest.mock('node:fs/promises', () => ({
+  mkdir: jest.fn().mockResolvedValue(undefined),
   readFile: jest.fn(),
   rm: jest.fn().mockResolvedValue(undefined)
 }))
