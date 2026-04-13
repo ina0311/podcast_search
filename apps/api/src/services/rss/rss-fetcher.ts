@@ -27,7 +27,8 @@ function parseDurationSec(value: unknown): number | null {
   if (parts.some(isNaN)) return null
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
   if (parts.length === 2) return parts[0] * 60 + parts[1]
-  return Number(value) || null
+  const num = Number(value)
+  return Number.isNaN(num) ? null : num
 }
 
 export async function fetchRssEpisodes(rssUrl: string): Promise<RssEpisode[]> {
