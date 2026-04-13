@@ -16,6 +16,7 @@
     "@podcast_search/database": "workspace:*",
     "@podcast_search/search-core": "workspace:*",
     "compression": "^1.8.1",
+    "fast-xml-parser": "^5.5.10",
     "helmet": "^8.1.0",
     "hono": "^4.8.12",
     "pino": "^9.8.0",

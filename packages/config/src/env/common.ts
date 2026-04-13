@@ -6,6 +6,7 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().default(DEFAULT_API_PORT),
   DATABASE_URL: z.url(),
+  ADMIN_API_KEY: z.string().min(1).optional(),
 
   // Embedding Provider 設定
   // @see https://platform.openai.com/docs/guides/embeddings
