@@ -2,7 +2,6 @@ import { createWriteStream } from 'node:fs'
 import { mkdir, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
 export async function downloadAudio(audioUrl: string, fileName: string): Promise<string> {
@@ -15,7 +14,7 @@ export async function downloadAudio(audioUrl: string, fileName: string): Promise
   if (!res.body) throw new Error('Response body is empty')
 
   const writer = createWriteStream(filePath)
-  await pipeline(Readable.fromWeb(res.body as any), writer)
+  await pipeline(res.body as any, writer)
 
   return filePath
 }
