@@ -1,10 +1,11 @@
+// @ts-nocheck
 const mockFetch = jest.spyOn(global, 'fetch')
 
 jest.mock('node:fs', () => ({
   createWriteStream: jest.fn(() => ({
     write: jest.fn(),
     end: jest.fn(),
-    on: jest.fn((event: string, cb: () => void) => {
+    on: jest.fn((event, cb) => {
       if (event === 'finish') cb()
     })
   }))
@@ -27,7 +28,7 @@ describe('downloadAudio', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       body: mockBody
-    } as any)
+    })
 
     const { downloadAudio } = await import('./audio-downloader')
     const result = await downloadAudio('https://example.com/ep.mp3', 'ep-1.mp3')
@@ -36,11 +37,20 @@ describe('downloadAudio', () => {
   })
 
   it('非200レスポンスでエラーをスロー', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 403 } as any)
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 403 })
 
     const { downloadAudio } = await import('./audio-downloader')
     await expect(downloadAudio('https://example.com/ep.mp3', 'ep-1.mp3')).rejects.toThrow(
       'Audio download failed: 403'
+    )
+  })
+
+  it('bodyがnullの場合エラーをスロー', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, body: null })
+
+    const { downloadAudio } = await import('./audio-downloader')
+    await expect(downloadAudio('https://example.com/ep.mp3', 'ep-1.mp3')).rejects.toThrow(
+      'Response body is empty'
     )
   })
 })
