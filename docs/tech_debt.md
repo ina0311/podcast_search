@@ -150,10 +150,10 @@ AWS Bedrock/OpenSearch への移行用プレースホルダーが `throw new Err
 `apps/api/` の全エンドポイントに認証がない。CORS の許可リストは設定済みだが、APIキーやトークンによる認証が未実装。
 
 **TODO**
-- [ ] 認証方式を決定（APIキー / Bearer JWT / どちらも）
-- [ ] `apps/api/src/middleware/auth.ts` を作成
-- [ ] 全ルートに認証ミドルウェアを適用（ヘルスチェック `/health` は除外）
-- [ ] 環境変数でAPIキーを管理し、設定スキーマに追加
+- [x] 認証方式を決定（APIキー / Bearer JWT / どちらも）→ X-Admin-Key ヘッダー認証（admin のみ）
+- [x] `apps/api/src/middleware/auth.ts` を作成
+- [x] admin ルート（`/admin/*`）に認証ミドルウェアを適用（一般 API は認証不要）
+- [x] 環境変数でAPIキーを管理し、設定スキーマに追加（`ADMIN_API_KEY`）
 
 ---
 

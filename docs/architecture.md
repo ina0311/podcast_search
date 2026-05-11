@@ -24,13 +24,15 @@ graph TD
   Whisper[Whisper CLI]
   OpenAI[(OpenAI Embeddings)]
   Pkgs[packages/*]
+  RSS[(RSS Feed)]
 
   AdminUI -- REST --> API
   DiscordBot -- REST --> API
-  Whisper -- "POST transcripts" --> API
+  API -- "spawn" --> Whisper
   API -- SQL --> DB
   API -- HTTP --> VEC
   API -- "Embeddings" --> OpenAI
+  API -- "fetch RSS" --> RSS
   API -- import --> Pkgs
 ```
 
@@ -41,15 +43,22 @@ graph TD
 - 可監視性：構造化ログ（Pino）と共通エラーハンドリング
 
 ## データフロー
-1. 音声を **Whisper** で文字起こし  
-2. **API** が受領し、**OpenAI** で Embedding を生成  
-3. ベクトル＋メタを **Qdrant** に保存  
-4. 検索クエリを API に送信  
-5. API が Embedding を生成 → Qdrant で近傍検索 → 候補返却
+
+### 検索フロー
+1. クライアントが `/search?q=...` を送信
+2. **API** が OpenAI で Embedding を生成
+3. Qdrant で近傍検索 → 候補返却
+
+### 取り込みフロー（`POST /admin/ingest`）
+1. **API** が RSS フィードを取得してエピソード一覧を収集
+2. 各エピソードの MP3 を `/tmp` にダウンロード
+3. **Whisper CLI** を子プロセスで起動して文字起こし（JSON 出力）
+4. **OpenAI** で Embedding を生成し **Qdrant** に保存
+5. エピソード・トランスクリプトを **PostgreSQL** に保存
 
 ## API ポリシー
 - CORS は本番で許可オリジンのみ
 - すべての入力に Zod バリデーション
-- ページネーション、レート制御
-- 例外は共通ハンドラで 5xx に集約し、トレースIDを付与
+- 管理 API（`/admin/*`）は `X-Admin-Key` ヘッダーで認証
+- 例外は共通ハンドラで 5xx に集約
 
