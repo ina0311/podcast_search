@@ -1,3 +1,7 @@
+jest.mock('../../client', () => ({
+  prisma: {}
+}))
+
 import type { DbClient } from '../../client'
 import type { EpisodeStatus } from '../../generated/prisma/client'
 import {

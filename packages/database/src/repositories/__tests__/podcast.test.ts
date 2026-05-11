@@ -1,3 +1,7 @@
+jest.mock('../../client', () => ({
+  prisma: {}
+}))
+
 import {
   createMockEpisode,
   createMockPodcast,

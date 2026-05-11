@@ -22,7 +22,6 @@ module.exports = {
     '^@podcast_search/database$': '<rootDir>/packages/database/src/index.ts',
     '^@podcast_search/search-core$': '<rootDir>/packages/search-core/src/index.ts'
   },
-  transformIgnorePatterns: ['node_modules/(?!(@prisma)/)'],
   collectCoverageFrom: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.ts', '!**/*.d.ts'],
   coverageDirectory: 'coverage',
   verbose: true
