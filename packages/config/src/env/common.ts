@@ -20,6 +20,11 @@ const EnvSchema = z.object({
   QDRANT_API_KEY: z.string().min(1).optional(),
   QDRANT_COLLECTION_NAME: z.string().default('transcript_segments'),
 
+  // Supabase Storage 設定
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().default('personality-audio-samples'),
+
   ALLOWED_ORIGINS: z.string().optional()
 })
 
