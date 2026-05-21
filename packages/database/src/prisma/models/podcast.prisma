@@ -1,12 +1,13 @@
 model Podcast {
-  id        Int      @id @default(autoincrement())
-  publicId  String   @unique @default(uuid()) @db.Uuid
-  title     String
-  rssUrl    String?
-  author    String?
-  language  String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  episodes  PodcastEpisode[]
+  id            Int                  @id @default(autoincrement())
+  publicId      String               @unique @default(uuid()) @db.Uuid
+  title         String
+  rssUrl        String?
+  author        String?
+  language      String?
+  imageUrl      String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  episodes      PodcastEpisode[]
+  personalities PersonalityPodcast[]
 }

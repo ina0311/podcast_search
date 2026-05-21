@@ -29,8 +29,8 @@ export * from "./enums.js"
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more PodcastEpisodes
- * const podcastEpisodes = await prisma.podcastEpisode.findMany()
+ * // Fetch zero or more EpisodePersonalities
+ * const episodePersonalities = await prisma.episodePersonality.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -40,10 +40,30 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
+ * Model EpisodePersonality
+ * 
+ */
+export type EpisodePersonality = Prisma.EpisodePersonalityModel
+/**
  * Model PodcastEpisode
  * 
  */
 export type PodcastEpisode = Prisma.PodcastEpisodeModel
+/**
+ * Model PersonalityAudioSample
+ * 
+ */
+export type PersonalityAudioSample = Prisma.PersonalityAudioSampleModel
+/**
+ * Model PersonalityPodcast
+ * 
+ */
+export type PersonalityPodcast = Prisma.PersonalityPodcastModel
+/**
+ * Model Personality
+ * 
+ */
+export type Personality = Prisma.PersonalityModel
 /**
  * Model Podcast
  * 

@@ -18,10 +18,30 @@ export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
 /**
+ * Model EpisodePersonality
+ * 
+ */
+export type EpisodePersonality = Prisma.EpisodePersonalityModel
+/**
  * Model PodcastEpisode
  * 
  */
 export type PodcastEpisode = Prisma.PodcastEpisodeModel
+/**
+ * Model PersonalityAudioSample
+ * 
+ */
+export type PersonalityAudioSample = Prisma.PersonalityAudioSampleModel
+/**
+ * Model PersonalityPodcast
+ * 
+ */
+export type PersonalityPodcast = Prisma.PersonalityPodcastModel
+/**
+ * Model Personality
+ * 
+ */
+export type Personality = Prisma.PersonalityModel
 /**
  * Model Podcast
  * 

@@ -51,7 +51,11 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  EpisodePersonality: 'EpisodePersonality',
   PodcastEpisode: 'PodcastEpisode',
+  PersonalityAudioSample: 'PersonalityAudioSample',
+  PersonalityPodcast: 'PersonalityPodcast',
+  Personality: 'Personality',
   Podcast: 'Podcast',
   TranscriptSegment: 'TranscriptSegment'
 } as const
@@ -72,6 +76,16 @@ export const TransactionIsolationLevel = {
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const EpisodePersonalityScalarFieldEnum = {
+  personalityId: 'personalityId',
+  episodeId: 'episodeId',
+  role: 'role',
+  createdAt: 'createdAt'
+} as const
+
+export type EpisodePersonalityScalarFieldEnum = (typeof EpisodePersonalityScalarFieldEnum)[keyof typeof EpisodePersonalityScalarFieldEnum]
+
+
 export const PodcastEpisodeScalarFieldEnum = {
   id: 'id',
   publicId: 'publicId',
@@ -89,6 +103,41 @@ export const PodcastEpisodeScalarFieldEnum = {
 } as const
 
 export type PodcastEpisodeScalarFieldEnum = (typeof PodcastEpisodeScalarFieldEnum)[keyof typeof PodcastEpisodeScalarFieldEnum]
+
+
+export const PersonalityAudioSampleScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  personalityId: 'personalityId',
+  storageUrl: 'storageUrl',
+  durationSec: 'durationSec',
+  embedding: 'embedding',
+  createdAt: 'createdAt'
+} as const
+
+export type PersonalityAudioSampleScalarFieldEnum = (typeof PersonalityAudioSampleScalarFieldEnum)[keyof typeof PersonalityAudioSampleScalarFieldEnum]
+
+
+export const PersonalityPodcastScalarFieldEnum = {
+  personalityId: 'personalityId',
+  podcastId: 'podcastId',
+  role: 'role',
+  createdAt: 'createdAt'
+} as const
+
+export type PersonalityPodcastScalarFieldEnum = (typeof PersonalityPodcastScalarFieldEnum)[keyof typeof PersonalityPodcastScalarFieldEnum]
+
+
+export const PersonalityScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  name: 'name',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PersonalityScalarFieldEnum = (typeof PersonalityScalarFieldEnum)[keyof typeof PersonalityScalarFieldEnum]
 
 
 export const PodcastScalarFieldEnum = {
@@ -131,6 +180,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull'
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -145,4 +202,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: 'DbNull',
+  JsonNull: 'JsonNull',
+  AnyNull: 'AnyNull'
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

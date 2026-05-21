@@ -8,7 +8,11 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/EpisodePersonality.js'
 export type * from './models/PodcastEpisode.js'
+export type * from './models/PersonalityAudioSample.js'
+export type * from './models/PersonalityPodcast.js'
+export type * from './models/Personality.js'
 export type * from './models/Podcast.js'
 export type * from './models/TranscriptSegment.js'
 export type * from './commonInputTypes.js'

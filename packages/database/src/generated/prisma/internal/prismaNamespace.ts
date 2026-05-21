@@ -384,7 +384,11 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  EpisodePersonality: 'EpisodePersonality',
   PodcastEpisode: 'PodcastEpisode',
+  PersonalityAudioSample: 'PersonalityAudioSample',
+  PersonalityPodcast: 'PersonalityPodcast',
+  Personality: 'Personality',
   Podcast: 'Podcast',
   TranscriptSegment: 'TranscriptSegment'
 } as const
@@ -402,10 +406,84 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "podcastEpisode" | "podcast" | "transcriptSegment"
+    modelProps: "episodePersonality" | "podcastEpisode" | "personalityAudioSample" | "personalityPodcast" | "personality" | "podcast" | "transcriptSegment"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    EpisodePersonality: {
+      payload: Prisma.$EpisodePersonalityPayload<ExtArgs>
+      fields: Prisma.EpisodePersonalityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EpisodePersonalityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EpisodePersonalityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        findFirst: {
+          args: Prisma.EpisodePersonalityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EpisodePersonalityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        findMany: {
+          args: Prisma.EpisodePersonalityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>[]
+        }
+        create: {
+          args: Prisma.EpisodePersonalityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        createMany: {
+          args: Prisma.EpisodePersonalityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.EpisodePersonalityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>[]
+        }
+        delete: {
+          args: Prisma.EpisodePersonalityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        update: {
+          args: Prisma.EpisodePersonalityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        deleteMany: {
+          args: Prisma.EpisodePersonalityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EpisodePersonalityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.EpisodePersonalityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>[]
+        }
+        upsert: {
+          args: Prisma.EpisodePersonalityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EpisodePersonalityPayload>
+        }
+        aggregate: {
+          args: Prisma.EpisodePersonalityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEpisodePersonality>
+        }
+        groupBy: {
+          args: Prisma.EpisodePersonalityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EpisodePersonalityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EpisodePersonalityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EpisodePersonalityCountAggregateOutputType> | number
+        }
+      }
+    }
     PodcastEpisode: {
       payload: Prisma.$PodcastEpisodePayload<ExtArgs>
       fields: Prisma.PodcastEpisodeFieldRefs
@@ -477,6 +555,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PodcastEpisodeCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PodcastEpisodeCountAggregateOutputType> | number
+        }
+      }
+    }
+    PersonalityAudioSample: {
+      payload: Prisma.$PersonalityAudioSamplePayload<ExtArgs>
+      fields: Prisma.PersonalityAudioSampleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PersonalityAudioSampleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PersonalityAudioSampleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        findFirst: {
+          args: Prisma.PersonalityAudioSampleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PersonalityAudioSampleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        findMany: {
+          args: Prisma.PersonalityAudioSampleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>[]
+        }
+        create: {
+          args: Prisma.PersonalityAudioSampleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        createMany: {
+          args: Prisma.PersonalityAudioSampleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PersonalityAudioSampleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>[]
+        }
+        delete: {
+          args: Prisma.PersonalityAudioSampleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        update: {
+          args: Prisma.PersonalityAudioSampleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        deleteMany: {
+          args: Prisma.PersonalityAudioSampleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PersonalityAudioSampleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PersonalityAudioSampleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>[]
+        }
+        upsert: {
+          args: Prisma.PersonalityAudioSampleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityAudioSamplePayload>
+        }
+        aggregate: {
+          args: Prisma.PersonalityAudioSampleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePersonalityAudioSample>
+        }
+        groupBy: {
+          args: Prisma.PersonalityAudioSampleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityAudioSampleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PersonalityAudioSampleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityAudioSampleCountAggregateOutputType> | number
+        }
+      }
+    }
+    PersonalityPodcast: {
+      payload: Prisma.$PersonalityPodcastPayload<ExtArgs>
+      fields: Prisma.PersonalityPodcastFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PersonalityPodcastFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PersonalityPodcastFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        findFirst: {
+          args: Prisma.PersonalityPodcastFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PersonalityPodcastFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        findMany: {
+          args: Prisma.PersonalityPodcastFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>[]
+        }
+        create: {
+          args: Prisma.PersonalityPodcastCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        createMany: {
+          args: Prisma.PersonalityPodcastCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PersonalityPodcastCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>[]
+        }
+        delete: {
+          args: Prisma.PersonalityPodcastDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        update: {
+          args: Prisma.PersonalityPodcastUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        deleteMany: {
+          args: Prisma.PersonalityPodcastDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PersonalityPodcastUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PersonalityPodcastUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>[]
+        }
+        upsert: {
+          args: Prisma.PersonalityPodcastUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPodcastPayload>
+        }
+        aggregate: {
+          args: Prisma.PersonalityPodcastAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePersonalityPodcast>
+        }
+        groupBy: {
+          args: Prisma.PersonalityPodcastGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityPodcastGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PersonalityPodcastCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityPodcastCountAggregateOutputType> | number
+        }
+      }
+    }
+    Personality: {
+      payload: Prisma.$PersonalityPayload<ExtArgs>
+      fields: Prisma.PersonalityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PersonalityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PersonalityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        findFirst: {
+          args: Prisma.PersonalityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PersonalityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        findMany: {
+          args: Prisma.PersonalityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>[]
+        }
+        create: {
+          args: Prisma.PersonalityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        createMany: {
+          args: Prisma.PersonalityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PersonalityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>[]
+        }
+        delete: {
+          args: Prisma.PersonalityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        update: {
+          args: Prisma.PersonalityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        deleteMany: {
+          args: Prisma.PersonalityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PersonalityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PersonalityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>[]
+        }
+        upsert: {
+          args: Prisma.PersonalityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonalityPayload>
+        }
+        aggregate: {
+          args: Prisma.PersonalityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePersonality>
+        }
+        groupBy: {
+          args: Prisma.PersonalityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PersonalityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonalityCountAggregateOutputType> | number
         }
       }
     }
@@ -667,6 +967,16 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const EpisodePersonalityScalarFieldEnum = {
+  personalityId: 'personalityId',
+  episodeId: 'episodeId',
+  role: 'role',
+  createdAt: 'createdAt'
+} as const
+
+export type EpisodePersonalityScalarFieldEnum = (typeof EpisodePersonalityScalarFieldEnum)[keyof typeof EpisodePersonalityScalarFieldEnum]
+
+
 export const PodcastEpisodeScalarFieldEnum = {
   id: 'id',
   publicId: 'publicId',
@@ -684,6 +994,41 @@ export const PodcastEpisodeScalarFieldEnum = {
 } as const
 
 export type PodcastEpisodeScalarFieldEnum = (typeof PodcastEpisodeScalarFieldEnum)[keyof typeof PodcastEpisodeScalarFieldEnum]
+
+
+export const PersonalityAudioSampleScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  personalityId: 'personalityId',
+  storageUrl: 'storageUrl',
+  durationSec: 'durationSec',
+  embedding: 'embedding',
+  createdAt: 'createdAt'
+} as const
+
+export type PersonalityAudioSampleScalarFieldEnum = (typeof PersonalityAudioSampleScalarFieldEnum)[keyof typeof PersonalityAudioSampleScalarFieldEnum]
+
+
+export const PersonalityPodcastScalarFieldEnum = {
+  personalityId: 'personalityId',
+  podcastId: 'podcastId',
+  role: 'role',
+  createdAt: 'createdAt'
+} as const
+
+export type PersonalityPodcastScalarFieldEnum = (typeof PersonalityPodcastScalarFieldEnum)[keyof typeof PersonalityPodcastScalarFieldEnum]
+
+
+export const PersonalityScalarFieldEnum = {
+  id: 'id',
+  publicId: 'publicId',
+  name: 'name',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PersonalityScalarFieldEnum = (typeof PersonalityScalarFieldEnum)[keyof typeof PersonalityScalarFieldEnum]
 
 
 export const PodcastScalarFieldEnum = {
@@ -726,6 +1071,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -740,6 +1093,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -777,20 +1139,6 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'EpisodeStatus'
- */
-export type EnumEpisodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EpisodeStatus'>
-    
-
-
-/**
- * Reference to a field of type 'EpisodeStatus[]'
- */
-export type ListEnumEpisodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EpisodeStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -805,6 +1153,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'EpisodeStatus'
+ */
+export type EnumEpisodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EpisodeStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'EpisodeStatus[]'
+ */
+export type ListEnumEpisodeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EpisodeStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -815,6 +1177,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 /**
@@ -912,7 +1288,11 @@ export type PrismaClientOptions = ({
   comments?: runtime.SqlCommenterPlugin[]
 }
 export type GlobalOmitConfig = {
+  episodePersonality?: Prisma.EpisodePersonalityOmit
   podcastEpisode?: Prisma.PodcastEpisodeOmit
+  personalityAudioSample?: Prisma.PersonalityAudioSampleOmit
+  personalityPodcast?: Prisma.PersonalityPodcastOmit
+  personality?: Prisma.PersonalityOmit
   podcast?: Prisma.PodcastOmit
   transcriptSegment?: Prisma.TranscriptSegmentOmit
 }

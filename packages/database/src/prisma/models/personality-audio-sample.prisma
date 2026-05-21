@@ -1,0 +1,11 @@
+model PersonalityAudioSample {
+  id            Int      @id @default(autoincrement())
+  publicId      String   @unique @default(uuid()) @db.Uuid
+  personalityId Int
+  storageUrl    String
+  durationSec   Float?
+  embedding     Json?
+  createdAt     DateTime @default(now())
+
+  personality Personality @relation(fields: [personalityId], references: [id], onDelete: Cascade)
+}

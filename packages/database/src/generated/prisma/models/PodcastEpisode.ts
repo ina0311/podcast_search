@@ -290,6 +290,7 @@ export type PodcastEpisodeWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"PodcastEpisode"> | Date | string
   podcast?: Prisma.XOR<Prisma.PodcastScalarRelationFilter, Prisma.PodcastWhereInput>
   transcripts?: Prisma.TranscriptSegmentListRelationFilter
+  episodePersonalities?: Prisma.EpisodePersonalityListRelationFilter
 }
 
 export type PodcastEpisodeOrderByWithRelationInput = {
@@ -308,6 +309,7 @@ export type PodcastEpisodeOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   podcast?: Prisma.PodcastOrderByWithRelationInput
   transcripts?: Prisma.TranscriptSegmentOrderByRelationAggregateInput
+  episodePersonalities?: Prisma.EpisodePersonalityOrderByRelationAggregateInput
 }
 
 export type PodcastEpisodeWhereUniqueInput = Prisma.AtLeast<{
@@ -330,6 +332,7 @@ export type PodcastEpisodeWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"PodcastEpisode"> | Date | string
   podcast?: Prisma.XOR<Prisma.PodcastScalarRelationFilter, Prisma.PodcastWhereInput>
   transcripts?: Prisma.TranscriptSegmentListRelationFilter
+  episodePersonalities?: Prisma.EpisodePersonalityListRelationFilter
 }, "id" | "publicId" | "podcastId_enclosureUrl">
 
 export type PodcastEpisodeOrderByWithAggregationInput = {
@@ -386,6 +389,7 @@ export type PodcastEpisodeCreateInput = {
   updatedAt?: Date | string
   podcast: Prisma.PodcastCreateNestedOneWithoutEpisodesInput
   transcripts?: Prisma.TranscriptSegmentCreateNestedManyWithoutEpisodeInput
+  episodePersonalities?: Prisma.EpisodePersonalityCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeUncheckedCreateInput = {
@@ -403,6 +407,7 @@ export type PodcastEpisodeUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcripts?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutEpisodeInput
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeUpdateInput = {
@@ -419,6 +424,7 @@ export type PodcastEpisodeUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   podcast?: Prisma.PodcastUpdateOneRequiredWithoutEpisodesNestedInput
   transcripts?: Prisma.TranscriptSegmentUpdateManyWithoutEpisodeNestedInput
+  episodePersonalities?: Prisma.EpisodePersonalityUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeUncheckedUpdateInput = {
@@ -436,6 +442,7 @@ export type PodcastEpisodeUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcripts?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutEpisodeNestedInput
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeCreateManyInput = {
@@ -482,6 +489,11 @@ export type PodcastEpisodeUncheckedUpdateManyInput = {
   source?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type PodcastEpisodeScalarRelationFilter = {
+  is?: Prisma.PodcastEpisodeWhereInput
+  isNot?: Prisma.PodcastEpisodeWhereInput
 }
 
 export type PodcastEpisodePodcastIdEnclosureUrlCompoundUniqueInput = {
@@ -559,9 +571,18 @@ export type PodcastEpisodeOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type PodcastEpisodeScalarRelationFilter = {
-  is?: Prisma.PodcastEpisodeWhereInput
-  isNot?: Prisma.PodcastEpisodeWhereInput
+export type PodcastEpisodeCreateNestedOneWithoutEpisodePersonalitiesInput = {
+  create?: Prisma.XOR<Prisma.PodcastEpisodeCreateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedCreateWithoutEpisodePersonalitiesInput>
+  connectOrCreate?: Prisma.PodcastEpisodeCreateOrConnectWithoutEpisodePersonalitiesInput
+  connect?: Prisma.PodcastEpisodeWhereUniqueInput
+}
+
+export type PodcastEpisodeUpdateOneRequiredWithoutEpisodePersonalitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.PodcastEpisodeCreateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedCreateWithoutEpisodePersonalitiesInput>
+  connectOrCreate?: Prisma.PodcastEpisodeCreateOrConnectWithoutEpisodePersonalitiesInput
+  upsert?: Prisma.PodcastEpisodeUpsertWithoutEpisodePersonalitiesInput
+  connect?: Prisma.PodcastEpisodeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PodcastEpisodeUpdateToOneWithWhereWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUpdateWithoutEpisodePersonalitiesInput>, Prisma.PodcastEpisodeUncheckedUpdateWithoutEpisodePersonalitiesInput>
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -578,22 +599,6 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
   increment?: number
   decrement?: number
   multiply?: number
@@ -656,6 +661,88 @@ export type PodcastEpisodeUpdateOneRequiredWithoutTranscriptsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PodcastEpisodeUpdateToOneWithWhereWithoutTranscriptsInput, Prisma.PodcastEpisodeUpdateWithoutTranscriptsInput>, Prisma.PodcastEpisodeUncheckedUpdateWithoutTranscriptsInput>
 }
 
+export type PodcastEpisodeCreateWithoutEpisodePersonalitiesInput = {
+  publicId?: string
+  title: string
+  enclosureUrl: string
+  status?: $Enums.EpisodeStatus
+  visibilityChangedAt?: Date | string | null
+  publishedAt?: Date | string | null
+  durationSec?: number | null
+  description?: string | null
+  source?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  podcast: Prisma.PodcastCreateNestedOneWithoutEpisodesInput
+  transcripts?: Prisma.TranscriptSegmentCreateNestedManyWithoutEpisodeInput
+}
+
+export type PodcastEpisodeUncheckedCreateWithoutEpisodePersonalitiesInput = {
+  id?: number
+  publicId?: string
+  podcastId: number
+  title: string
+  enclosureUrl: string
+  status?: $Enums.EpisodeStatus
+  visibilityChangedAt?: Date | string | null
+  publishedAt?: Date | string | null
+  durationSec?: number | null
+  description?: string | null
+  source?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  transcripts?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutEpisodeInput
+}
+
+export type PodcastEpisodeCreateOrConnectWithoutEpisodePersonalitiesInput = {
+  where: Prisma.PodcastEpisodeWhereUniqueInput
+  create: Prisma.XOR<Prisma.PodcastEpisodeCreateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedCreateWithoutEpisodePersonalitiesInput>
+}
+
+export type PodcastEpisodeUpsertWithoutEpisodePersonalitiesInput = {
+  update: Prisma.XOR<Prisma.PodcastEpisodeUpdateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedUpdateWithoutEpisodePersonalitiesInput>
+  create: Prisma.XOR<Prisma.PodcastEpisodeCreateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedCreateWithoutEpisodePersonalitiesInput>
+  where?: Prisma.PodcastEpisodeWhereInput
+}
+
+export type PodcastEpisodeUpdateToOneWithWhereWithoutEpisodePersonalitiesInput = {
+  where?: Prisma.PodcastEpisodeWhereInput
+  data: Prisma.XOR<Prisma.PodcastEpisodeUpdateWithoutEpisodePersonalitiesInput, Prisma.PodcastEpisodeUncheckedUpdateWithoutEpisodePersonalitiesInput>
+}
+
+export type PodcastEpisodeUpdateWithoutEpisodePersonalitiesInput = {
+  publicId?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  enclosureUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEpisodeStatusFieldUpdateOperationsInput | $Enums.EpisodeStatus
+  visibilityChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  durationSec?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  podcast?: Prisma.PodcastUpdateOneRequiredWithoutEpisodesNestedInput
+  transcripts?: Prisma.TranscriptSegmentUpdateManyWithoutEpisodeNestedInput
+}
+
+export type PodcastEpisodeUncheckedUpdateWithoutEpisodePersonalitiesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  publicId?: Prisma.StringFieldUpdateOperationsInput | string
+  podcastId?: Prisma.IntFieldUpdateOperationsInput | number
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  enclosureUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumEpisodeStatusFieldUpdateOperationsInput | $Enums.EpisodeStatus
+  visibilityChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  durationSec?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  transcripts?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutEpisodeNestedInput
+}
+
 export type PodcastEpisodeCreateWithoutPodcastInput = {
   publicId?: string
   title: string
@@ -669,6 +756,7 @@ export type PodcastEpisodeCreateWithoutPodcastInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcripts?: Prisma.TranscriptSegmentCreateNestedManyWithoutEpisodeInput
+  episodePersonalities?: Prisma.EpisodePersonalityCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeUncheckedCreateWithoutPodcastInput = {
@@ -685,6 +773,7 @@ export type PodcastEpisodeUncheckedCreateWithoutPodcastInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   transcripts?: Prisma.TranscriptSegmentUncheckedCreateNestedManyWithoutEpisodeInput
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeCreateOrConnectWithoutPodcastInput = {
@@ -745,6 +834,7 @@ export type PodcastEpisodeCreateWithoutTranscriptsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   podcast: Prisma.PodcastCreateNestedOneWithoutEpisodesInput
+  episodePersonalities?: Prisma.EpisodePersonalityCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeUncheckedCreateWithoutTranscriptsInput = {
@@ -761,6 +851,7 @@ export type PodcastEpisodeUncheckedCreateWithoutTranscriptsInput = {
   source?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedCreateNestedManyWithoutEpisodeInput
 }
 
 export type PodcastEpisodeCreateOrConnectWithoutTranscriptsInput = {
@@ -792,6 +883,7 @@ export type PodcastEpisodeUpdateWithoutTranscriptsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   podcast?: Prisma.PodcastUpdateOneRequiredWithoutEpisodesNestedInput
+  episodePersonalities?: Prisma.EpisodePersonalityUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeUncheckedUpdateWithoutTranscriptsInput = {
@@ -808,6 +900,7 @@ export type PodcastEpisodeUncheckedUpdateWithoutTranscriptsInput = {
   source?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeCreateManyPodcastInput = {
@@ -838,6 +931,7 @@ export type PodcastEpisodeUpdateWithoutPodcastInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcripts?: Prisma.TranscriptSegmentUpdateManyWithoutEpisodeNestedInput
+  episodePersonalities?: Prisma.EpisodePersonalityUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeUncheckedUpdateWithoutPodcastInput = {
@@ -854,6 +948,7 @@ export type PodcastEpisodeUncheckedUpdateWithoutPodcastInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transcripts?: Prisma.TranscriptSegmentUncheckedUpdateManyWithoutEpisodeNestedInput
+  episodePersonalities?: Prisma.EpisodePersonalityUncheckedUpdateManyWithoutEpisodeNestedInput
 }
 
 export type PodcastEpisodeUncheckedUpdateManyWithoutPodcastInput = {
@@ -878,10 +973,12 @@ export type PodcastEpisodeUncheckedUpdateManyWithoutPodcastInput = {
 
 export type PodcastEpisodeCountOutputType = {
   transcripts: number
+  episodePersonalities: number
 }
 
 export type PodcastEpisodeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transcripts?: boolean | PodcastEpisodeCountOutputTypeCountTranscriptsArgs
+  episodePersonalities?: boolean | PodcastEpisodeCountOutputTypeCountEpisodePersonalitiesArgs
 }
 
 /**
@@ -901,6 +998,13 @@ export type PodcastEpisodeCountOutputTypeCountTranscriptsArgs<ExtArgs extends ru
   where?: Prisma.TranscriptSegmentWhereInput
 }
 
+/**
+ * PodcastEpisodeCountOutputType without action
+ */
+export type PodcastEpisodeCountOutputTypeCountEpisodePersonalitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EpisodePersonalityWhereInput
+}
+
 
 export type PodcastEpisodeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -918,6 +1022,7 @@ export type PodcastEpisodeSelect<ExtArgs extends runtime.Types.Extensions.Intern
   updatedAt?: boolean
   podcast?: boolean | Prisma.PodcastDefaultArgs<ExtArgs>
   transcripts?: boolean | Prisma.PodcastEpisode$transcriptsArgs<ExtArgs>
+  episodePersonalities?: boolean | Prisma.PodcastEpisode$episodePersonalitiesArgs<ExtArgs>
   _count?: boolean | Prisma.PodcastEpisodeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["podcastEpisode"]>
 
@@ -975,6 +1080,7 @@ export type PodcastEpisodeOmit<ExtArgs extends runtime.Types.Extensions.Internal
 export type PodcastEpisodeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   podcast?: boolean | Prisma.PodcastDefaultArgs<ExtArgs>
   transcripts?: boolean | Prisma.PodcastEpisode$transcriptsArgs<ExtArgs>
+  episodePersonalities?: boolean | Prisma.PodcastEpisode$episodePersonalitiesArgs<ExtArgs>
   _count?: boolean | Prisma.PodcastEpisodeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PodcastEpisodeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -989,6 +1095,7 @@ export type $PodcastEpisodePayload<ExtArgs extends runtime.Types.Extensions.Inte
   objects: {
     podcast: Prisma.$PodcastPayload<ExtArgs>
     transcripts: Prisma.$TranscriptSegmentPayload<ExtArgs>[]
+    episodePersonalities: Prisma.$EpisodePersonalityPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1400,6 +1507,7 @@ export interface Prisma__PodcastEpisodeClient<T, Null = never, ExtArgs extends r
   readonly [Symbol.toStringTag]: "PrismaPromise"
   podcast<T extends Prisma.PodcastDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PodcastDefaultArgs<ExtArgs>>): Prisma.Prisma__PodcastClient<runtime.Types.Result.GetResult<Prisma.$PodcastPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   transcripts<T extends Prisma.PodcastEpisode$transcriptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PodcastEpisode$transcriptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TranscriptSegmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  episodePersonalities<T extends Prisma.PodcastEpisode$episodePersonalitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PodcastEpisode$episodePersonalitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EpisodePersonalityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1859,6 +1967,30 @@ export type PodcastEpisode$transcriptsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.TranscriptSegmentScalarFieldEnum | Prisma.TranscriptSegmentScalarFieldEnum[]
+}
+
+/**
+ * PodcastEpisode.episodePersonalities
+ */
+export type PodcastEpisode$episodePersonalitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EpisodePersonality
+   */
+  select?: Prisma.EpisodePersonalitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EpisodePersonality
+   */
+  omit?: Prisma.EpisodePersonalityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EpisodePersonalityInclude<ExtArgs> | null
+  where?: Prisma.EpisodePersonalityWhereInput
+  orderBy?: Prisma.EpisodePersonalityOrderByWithRelationInput | Prisma.EpisodePersonalityOrderByWithRelationInput[]
+  cursor?: Prisma.EpisodePersonalityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EpisodePersonalityScalarFieldEnum | Prisma.EpisodePersonalityScalarFieldEnum[]
 }
 
 /**

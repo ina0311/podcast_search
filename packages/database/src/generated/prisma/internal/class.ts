@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.2.0",
   "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\nenum EpisodeStatus {\n  PUBLISHED\n  PRIVATE\n  REMOVED\n  DRAFT\n}\n\nmodel PodcastEpisode {\n  id                  Int           @id @default(autoincrement())\n  publicId            String        @unique @default(uuid()) @db.Uuid\n  podcastId           Int\n  podcast             Podcast       @relation(fields: [podcastId], references: [id])\n  title               String\n  enclosureUrl        String\n  status              EpisodeStatus @default(PUBLISHED)\n  visibilityChangedAt DateTime?\n  publishedAt         DateTime?\n  durationSec         Int?\n  description         String?\n  source              String?\n  createdAt           DateTime      @default(now())\n  updatedAt           DateTime      @updatedAt\n\n  transcripts TranscriptSegment[]\n\n  @@unique([podcastId, enclosureUrl])\n}\n\nmodel Podcast {\n  id        Int              @id @default(autoincrement())\n  publicId  String           @unique @default(uuid()) @db.Uuid\n  title     String\n  rssUrl    String?\n  author    String?\n  language  String?\n  imageUrl  String?\n  createdAt DateTime         @default(now())\n  updatedAt DateTime         @updatedAt\n  episodes  PodcastEpisode[]\n}\n\nmodel TranscriptSegment {\n  id           Int            @id @default(autoincrement())\n  publicId     String         @unique @default(uuid()) @db.Uuid\n  episodeId    Int\n  episode      PodcastEpisode @relation(fields: [episodeId], references: [id])\n  text         String\n  startMs      Int\n  endMs        Int\n  language     String?\n  speakerLabel String?\n  confidence   Float?\n  createdAt    DateTime       @default(now())\n  updatedAt    DateTime       @updatedAt\n\n  @@unique([episodeId, startMs, endMs])\n}\n",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\nenum EpisodeStatus {\n  PUBLISHED\n  PRIVATE\n  REMOVED\n  DRAFT\n}\n\nmodel EpisodePersonality {\n  personalityId Int\n  episodeId     Int\n  role          String?\n  createdAt     DateTime @default(now())\n\n  personality Personality    @relation(fields: [personalityId], references: [id], onDelete: Cascade)\n  episode     PodcastEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)\n\n  @@id([personalityId, episodeId])\n}\n\nmodel PodcastEpisode {\n  id                  Int           @id @default(autoincrement())\n  publicId            String        @unique @default(uuid()) @db.Uuid\n  podcastId           Int\n  podcast             Podcast       @relation(fields: [podcastId], references: [id])\n  title               String\n  enclosureUrl        String\n  status              EpisodeStatus @default(PUBLISHED)\n  visibilityChangedAt DateTime?\n  publishedAt         DateTime?\n  durationSec         Int?\n  description         String?\n  source              String?\n  createdAt           DateTime      @default(now())\n  updatedAt           DateTime      @updatedAt\n\n  transcripts          TranscriptSegment[]\n  episodePersonalities EpisodePersonality[]\n\n  @@unique([podcastId, enclosureUrl])\n  @@index([podcastId, publishedAt(sort: Desc)])\n}\n\nmodel PersonalityAudioSample {\n  id            Int      @id @default(autoincrement())\n  publicId      String   @unique @default(uuid()) @db.Uuid\n  personalityId Int\n  storageUrl    String\n  durationSec   Float?\n  embedding     Json?\n  createdAt     DateTime @default(now())\n\n  personality Personality @relation(fields: [personalityId], references: [id], onDelete: Cascade)\n}\n\nmodel PersonalityPodcast {\n  personalityId Int\n  podcastId     Int\n  role          String?\n  createdAt     DateTime @default(now())\n\n  personality Personality @relation(fields: [personalityId], references: [id], onDelete: Cascade)\n  podcast     Podcast     @relation(fields: [podcastId], references: [id], onDelete: Cascade)\n\n  @@id([personalityId, podcastId])\n}\n\nmodel Personality {\n  id          Int      @id @default(autoincrement())\n  publicId    String   @unique @default(uuid()) @db.Uuid\n  name        String\n  description String?\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  podcasts     PersonalityPodcast[]\n  episodes     EpisodePersonality[]\n  audioSamples PersonalityAudioSample[]\n}\n\nmodel Podcast {\n  id            Int                  @id @default(autoincrement())\n  publicId      String               @unique @default(uuid()) @db.Uuid\n  title         String\n  rssUrl        String?\n  author        String?\n  language      String?\n  imageUrl      String?\n  createdAt     DateTime             @default(now())\n  updatedAt     DateTime             @updatedAt\n  episodes      PodcastEpisode[]\n  personalities PersonalityPodcast[]\n}\n\nmodel TranscriptSegment {\n  id           Int            @id @default(autoincrement())\n  publicId     String         @unique @default(uuid()) @db.Uuid\n  episodeId    Int\n  episode      PodcastEpisode @relation(fields: [episodeId], references: [id])\n  text         String\n  startMs      Int\n  endMs        Int\n  language     String?\n  speakerLabel String?\n  confidence   Float?\n  createdAt    DateTime       @default(now())\n  updatedAt    DateTime       @updatedAt\n\n  @@unique([episodeId, startMs, endMs])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"PodcastEpisode\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"podcastId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"podcast\",\"kind\":\"object\",\"type\":\"Podcast\",\"relationName\":\"PodcastToPodcastEpisode\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"enclosureUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"EpisodeStatus\"},{\"name\":\"visibilityChangedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"durationSec\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"source\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"transcripts\",\"kind\":\"object\",\"type\":\"TranscriptSegment\",\"relationName\":\"PodcastEpisodeToTranscriptSegment\"}],\"dbName\":null},\"Podcast\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rssUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"author\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"language\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"imageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"episodes\",\"kind\":\"object\",\"type\":\"PodcastEpisode\",\"relationName\":\"PodcastToPodcastEpisode\"}],\"dbName\":null},\"TranscriptSegment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"episodeId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"episode\",\"kind\":\"object\",\"type\":\"PodcastEpisode\",\"relationName\":\"PodcastEpisodeToTranscriptSegment\"},{\"name\":\"text\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"startMs\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"endMs\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"language\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"speakerLabel\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"confidence\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"EpisodePersonality\":{\"fields\":[{\"name\":\"personalityId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"episodeId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"role\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"personality\",\"kind\":\"object\",\"type\":\"Personality\",\"relationName\":\"EpisodePersonalityToPersonality\"},{\"name\":\"episode\",\"kind\":\"object\",\"type\":\"PodcastEpisode\",\"relationName\":\"EpisodePersonalityToPodcastEpisode\"}],\"dbName\":null},\"PodcastEpisode\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"podcastId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"podcast\",\"kind\":\"object\",\"type\":\"Podcast\",\"relationName\":\"PodcastToPodcastEpisode\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"enclosureUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"EpisodeStatus\"},{\"name\":\"visibilityChangedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"publishedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"durationSec\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"source\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"transcripts\",\"kind\":\"object\",\"type\":\"TranscriptSegment\",\"relationName\":\"PodcastEpisodeToTranscriptSegment\"},{\"name\":\"episodePersonalities\",\"kind\":\"object\",\"type\":\"EpisodePersonality\",\"relationName\":\"EpisodePersonalityToPodcastEpisode\"}],\"dbName\":null},\"PersonalityAudioSample\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"personalityId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"storageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"durationSec\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"embedding\",\"kind\":\"scalar\",\"type\":\"Json\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"personality\",\"kind\":\"object\",\"type\":\"Personality\",\"relationName\":\"PersonalityToPersonalityAudioSample\"}],\"dbName\":null},\"PersonalityPodcast\":{\"fields\":[{\"name\":\"personalityId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"podcastId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"role\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"personality\",\"kind\":\"object\",\"type\":\"Personality\",\"relationName\":\"PersonalityToPersonalityPodcast\"},{\"name\":\"podcast\",\"kind\":\"object\",\"type\":\"Podcast\",\"relationName\":\"PersonalityPodcastToPodcast\"}],\"dbName\":null},\"Personality\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"podcasts\",\"kind\":\"object\",\"type\":\"PersonalityPodcast\",\"relationName\":\"PersonalityToPersonalityPodcast\"},{\"name\":\"episodes\",\"kind\":\"object\",\"type\":\"EpisodePersonality\",\"relationName\":\"EpisodePersonalityToPersonality\"},{\"name\":\"audioSamples\",\"kind\":\"object\",\"type\":\"PersonalityAudioSample\",\"relationName\":\"PersonalityToPersonalityAudioSample\"}],\"dbName\":null},\"Podcast\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rssUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"author\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"language\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"imageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"episodes\",\"kind\":\"object\",\"type\":\"PodcastEpisode\",\"relationName\":\"PodcastToPodcastEpisode\"},{\"name\":\"personalities\",\"kind\":\"object\",\"type\":\"PersonalityPodcast\",\"relationName\":\"PersonalityPodcastToPodcast\"}],\"dbName\":null},\"TranscriptSegment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"publicId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"episodeId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"episode\",\"kind\":\"object\",\"type\":\"PodcastEpisode\",\"relationName\":\"PodcastEpisodeToTranscriptSegment\"},{\"name\":\"text\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"startMs\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"endMs\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"language\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"speakerLabel\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"confidence\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -58,8 +58,8 @@ export interface PrismaClientConstructor {
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more PodcastEpisodes
-   * const podcastEpisodes = await prisma.podcastEpisode.findMany()
+   * // Fetch zero or more EpisodePersonalities
+   * const episodePersonalities = await prisma.episodePersonality.findMany()
    * ```
    * 
    * Read more in our [docs](https://pris.ly/d/client).
@@ -80,8 +80,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more PodcastEpisodes
- * const podcastEpisodes = await prisma.podcastEpisode.findMany()
+ * // Fetch zero or more EpisodePersonalities
+ * const episodePersonalities = await prisma.episodePersonality.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -175,6 +175,16 @@ export interface PrismaClient<
   }>>
 
       /**
+   * `prisma.episodePersonality`: Exposes CRUD operations for the **EpisodePersonality** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EpisodePersonalities
+    * const episodePersonalities = await prisma.episodePersonality.findMany()
+    * ```
+    */
+  get episodePersonality(): Prisma.EpisodePersonalityDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
    * `prisma.podcastEpisode`: Exposes CRUD operations for the **PodcastEpisode** model.
     * Example usage:
     * ```ts
@@ -183,6 +193,36 @@ export interface PrismaClient<
     * ```
     */
   get podcastEpisode(): Prisma.PodcastEpisodeDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.personalityAudioSample`: Exposes CRUD operations for the **PersonalityAudioSample** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PersonalityAudioSamples
+    * const personalityAudioSamples = await prisma.personalityAudioSample.findMany()
+    * ```
+    */
+  get personalityAudioSample(): Prisma.PersonalityAudioSampleDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.personalityPodcast`: Exposes CRUD operations for the **PersonalityPodcast** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PersonalityPodcasts
+    * const personalityPodcasts = await prisma.personalityPodcast.findMany()
+    * ```
+    */
+  get personalityPodcast(): Prisma.PersonalityPodcastDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.personality`: Exposes CRUD operations for the **Personality** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Personalities
+    * const personalities = await prisma.personality.findMany()
+    * ```
+    */
+  get personality(): Prisma.PersonalityDelegate<ExtArgs, { omit: OmitOpts }>;
 
   /**
    * `prisma.podcast`: Exposes CRUD operations for the **Podcast** model.

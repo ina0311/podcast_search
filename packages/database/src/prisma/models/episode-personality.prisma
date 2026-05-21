@@ -1,0 +1,11 @@
+model EpisodePersonality {
+  personalityId Int
+  episodeId     Int
+  role          String?
+  createdAt     DateTime @default(now())
+
+  personality Personality    @relation(fields: [personalityId], references: [id], onDelete: Cascade)
+  episode     PodcastEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@id([personalityId, episodeId])
+}
