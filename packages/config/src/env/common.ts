@@ -25,7 +25,10 @@ const EnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   SUPABASE_STORAGE_BUCKET: z.string().default('personality-audio-samples'),
 
-  ALLOWED_ORIGINS: z.string().optional()
+  ALLOWED_ORIGINS: z.string().optional(),
+
+  // WhisperX 話者識別設定
+  HUGGINGFACE_TOKEN: z.string().optional()
 })
 
 export type Env = z.infer<typeof EnvSchema>
