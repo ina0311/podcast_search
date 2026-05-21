@@ -1,3 +1,5 @@
 export * from './episode'
+export * from './personality'
+export * from './personality-audio-sample'
 export * from './podcast'
 export * from './transcript'

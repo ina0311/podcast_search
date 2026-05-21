@@ -2,6 +2,8 @@
 
 // Re-export model types with simpler names
 export type {
+  Personality,
+  PersonalityAudioSample,
   Podcast,
   PodcastEpisode,
   TranscriptSegment
