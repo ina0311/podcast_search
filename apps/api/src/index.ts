@@ -9,6 +9,7 @@ import logger from './lib/logger'
 import { adminAuth } from './middleware/auth'
 import adminRouter from './routes/admin'
 import episodesRouter from './routes/episodes'
+import personalitiesRouter from './routes/personalities'
 import podcastsRouter from './routes/podcasts'
 import searchRouter from './routes/search'
 
@@ -19,6 +20,7 @@ const app = new Hono()
   .route('/episodes', episodesRouter)
   .route('/search', searchRouter)
   .route('/admin', adminRouter)
+  .route('/personalities', personalitiesRouter)
 
 // Middlewares (applied separately to preserve type inference)
 // CORS設定: 環境変数 ALLOWED_ORIGINS があればそれを使用、なければ開発環境のデフォルト
@@ -27,6 +29,7 @@ const allowedOrigins = env.ALLOWED_ORIGINS
   : ['http://localhost:5173', 'http://localhost:8080'] // 開発環境のデフォルト
 
 app.use('/admin/*', adminAuth)
+app.use('/personalities/*', adminAuth)
 app.use(
   '*',
   cors({
