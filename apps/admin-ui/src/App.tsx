@@ -3,6 +3,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import EpisodeDetail from './pages/EpisodeDetail'
 import EpisodeList from './pages/EpisodeList'
+import PersonalityDetail from './pages/PersonalityDetail'
+import PersonalityList from './pages/PersonalityList'
 import PodcastDetail from './pages/PodcastDetail'
 import PodcastList from './pages/PodcastList'
 
@@ -69,6 +71,16 @@ export default function App() {
                 >
                   Episodes
                 </NavLink>
+                <NavLink
+                  to="/personalities"
+                  className={({ isActive }) =>
+                    `text-sm font-medium transition-colors ${
+                      isActive ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  Personalities
+                </NavLink>
               </nav>
             </div>
           </div>
@@ -81,6 +93,8 @@ export default function App() {
             <Route path="/podcasts/:id" element={<PodcastDetail />} />
             <Route path="/episodes" element={<EpisodeList />} />
             <Route path="/episodes/:id" element={<EpisodeDetail />} />
+            <Route path="/personalities" element={<PersonalityList />} />
+            <Route path="/personalities/:id" element={<PersonalityDetail />} />
           </Routes>
         </main>
       </div>

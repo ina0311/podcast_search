@@ -1,4 +1,6 @@
+export * from './admin'
 export * from './episodes'
+export * from './personalities'
 export * from './podcasts'
 export type { PodcastSearchResult } from './search'
 export * from './search'
