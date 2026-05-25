@@ -1,10 +1,31 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { fetchPodcast } from '../api'
+import type { IngestStatus } from '../api'
+import {
+  addPersonalityToPodcast,
+  fetchIngestStatus,
+  fetchPersonalities,
+  fetchPersonalitiesByPodcast,
+  fetchPodcast,
+  removePersonalityFromPodcast,
+  triggerIngest
+} from '../api'
 
 export default function PodcastDetail() {
   const { id } = useParams<{ id: string }>()
   const podcastId = Number(id)
+
+  const [ingestState, setIngestState] = useState<IngestStatus['status']>('idle')
+  const [progress, setProgress] = useState({ total: 0, done: 0 })
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
 
   const {
     data: podcast,
@@ -15,6 +36,54 @@ export default function PodcastDetail() {
     queryFn: () => fetchPodcast(podcastId),
     enabled: !Number.isNaN(podcastId)
   })
+
+  const { data: allPersonalities = [] } = useQuery({
+    queryKey: ['personalities'],
+    queryFn: fetchPersonalities
+  })
+
+  const { data: podcastPersonalities = [] } = useQuery({
+    queryKey: ['podcast-personalities', podcastId],
+    queryFn: () => fetchPersonalitiesByPodcast(podcastId),
+    enabled: !Number.isNaN(podcastId)
+  })
+
+  const addMutation = useMutation({
+    mutationFn: ({ personalityId, role }: { personalityId: number; role?: string }) =>
+      addPersonalityToPodcast(podcastId, personalityId, role),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['podcast-personalities', podcastId] })
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (personalityId: number) => removePersonalityFromPodcast(podcastId, personalityId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['podcast-personalities', podcastId] })
+  })
+
+  const handleIngest = async (rssUrl: string) => {
+    setIngestState('running')
+    setProgress({ total: 0, done: 0 })
+    try {
+      await triggerIngest(rssUrl)
+    } catch {
+      setIngestState('error')
+      return
+    }
+    intervalRef.current = setInterval(async () => {
+      try {
+        const status = await fetchIngestStatus()
+        setProgress({ total: status.total, done: status.done })
+        if (status.status === 'done' || status.status === 'error') {
+          setIngestState(status.status)
+          if (intervalRef.current) clearInterval(intervalRef.current)
+        }
+      } catch {
+        setIngestState('error')
+        if (intervalRef.current) clearInterval(intervalRef.current)
+      }
+    }, 1000)
+  }
 
   if (isLoading) {
     return <div className="text-center py-8">読み込み中...</div>
@@ -62,8 +131,76 @@ export default function PodcastDetail() {
                 RSS Feed
               </a>
             )}
+            {podcast.rssUrl && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  disabled={ingestState === 'running'}
+                  onClick={() => handleIngest(podcast.rssUrl!)}
+                  className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {ingestState === 'running' ? '文字起こし中...' : '文字起こし開始'}
+                </button>
+                {ingestState === 'running' && progress.total > 0 && (
+                  <span className="ml-3 text-sm text-gray-600">
+                    {progress.done} / {progress.total} 件完了
+                  </span>
+                )}
+                {ingestState === 'done' && (
+                  <span className="ml-3 text-sm text-green-600">完了しました</span>
+                )}
+                {ingestState === 'error' && (
+                  <span className="ml-3 text-sm text-red-600">エラーが発生しました</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h3 className="text-lg font-semibold mb-3">デフォルト出演者</h3>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {podcastPersonalities.map((p) => (
+            <span
+              key={p.id}
+              className="flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
+            >
+              {p.name}
+              <button
+                type="button"
+                onClick={() => removeMutation.mutate(p.id)}
+                className="ml-1 text-indigo-500 hover:text-indigo-700"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {podcastPersonalities.length === 0 && (
+            <span className="text-sm text-gray-500">未設定（すべてのパーソナリティが対象）</span>
+          )}
+        </div>
+        <select
+          onChange={(e) => {
+            if (e.target.value) {
+              addMutation.mutate({ personalityId: Number(e.target.value) })
+              e.target.value = ''
+            }
+          }}
+          className="border rounded px-3 py-1.5 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            + パーソナリティを追加
+          </option>
+          {allPersonalities
+            .filter((p) => !podcastPersonalities.some((pp) => pp.id === p.id))
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </select>
       </div>
 
       <h3 className="text-xl font-semibold mb-4">エピソード ({podcast.episodes.length}件)</h3>

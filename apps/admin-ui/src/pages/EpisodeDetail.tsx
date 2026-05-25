@@ -1,6 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { fetchEpisode } from '../api'
+import {
+  addPersonalityToEpisode,
+  fetchEpisode,
+  fetchPersonalities,
+  fetchPersonalitiesByEpisode,
+  removePersonalityFromEpisode
+} from '../api'
 
 function formatTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000)
@@ -12,6 +18,7 @@ function formatTime(ms: number): string {
 export default function EpisodeDetail() {
   const { id } = useParams<{ id: string }>()
   const episodeId = Number(id)
+  const queryClient = useQueryClient()
 
   const {
     data: episode,
@@ -21,6 +28,29 @@ export default function EpisodeDetail() {
     queryKey: ['episode', episodeId],
     queryFn: () => fetchEpisode(episodeId),
     enabled: !Number.isNaN(episodeId)
+  })
+
+  const { data: allPersonalities = [] } = useQuery({
+    queryKey: ['personalities'],
+    queryFn: fetchPersonalities
+  })
+
+  const { data: episodePersonalities = [] } = useQuery({
+    queryKey: ['episode-personalities', episodeId],
+    queryFn: () => fetchPersonalitiesByEpisode(episodeId),
+    enabled: !Number.isNaN(episodeId)
+  })
+
+  const addEpisodePersonalityMutation = useMutation({
+    mutationFn: (personalityId: number) => addPersonalityToEpisode(episodeId, personalityId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['episode-personalities', episodeId] })
+  })
+
+  const removeEpisodePersonalityMutation = useMutation({
+    mutationFn: (personalityId: number) => removePersonalityFromEpisode(episodeId, personalityId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['episode-personalities', episodeId] })
   })
 
   if (isLoading) {
@@ -72,6 +102,53 @@ export default function EpisodeDetail() {
         >
           音声ファイルを開く
         </a>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">出演者</h3>
+          <span className="text-xs text-gray-500">
+            {episodePersonalities.length === 0 ? '（番組デフォルトを使用）' : 'エピソード個別設定'}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {episodePersonalities.map((p) => (
+            <span
+              key={p.id}
+              className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+            >
+              {p.name}
+              <button
+                type="button"
+                onClick={() => removeEpisodePersonalityMutation.mutate(p.id)}
+                className="ml-1 text-green-500 hover:text-green-700"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <select
+          onChange={(e) => {
+            if (e.target.value) {
+              addEpisodePersonalityMutation.mutate(Number(e.target.value))
+              e.target.value = ''
+            }
+          }}
+          className="border rounded px-3 py-1.5 text-sm"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            + この回の出演者を追加
+          </option>
+          {allPersonalities
+            .filter((p) => !episodePersonalities.some((ep) => ep.id === p.id))
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </select>
       </div>
 
       <h3 className="text-xl font-semibold mb-4">
