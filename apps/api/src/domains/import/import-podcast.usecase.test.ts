@@ -5,6 +5,9 @@ jest.mock('@podcast_search/database', () => ({
   EpisodeRepository: jest.fn().mockImplementation(() => ({
     upsertByEnclosureUrl: jest.fn()
   })),
+  PersonalityRepository: jest.fn().mockImplementation(() => ({
+    findPersonalitiesForTranscription: jest.fn().mockResolvedValue([])
+  })),
   TranscriptRepository: jest.fn().mockImplementation(() => ({
     countByEpisodeId: jest.fn(),
     bulkCreate: jest.fn(),
@@ -28,7 +31,7 @@ jest.mock('../../services/transcription/audio-downloader', () => ({
   deleteAudio: jest.fn()
 }))
 
-jest.mock('../../services/transcription/whisper-runner', () => ({
+jest.mock('../../services/transcription/whisperx-runner', () => ({
   transcribeAudio: jest.fn()
 }))
 
@@ -45,17 +48,37 @@ jest.mock('./job-store', () => ({
 
 import {
   EpisodeRepository,
+  PersonalityRepository,
   PodcastRepository,
   TranscriptRepository
 } from '@podcast_search/database'
 import { createSearchCoreFromEnv } from '@podcast_search/search-core'
 import { fetchRssEpisodes } from '../../services/rss/rss-fetcher'
 import { deleteAudio, downloadAudio } from '../../services/transcription/audio-downloader'
-import { transcribeAudio } from '../../services/transcription/whisper-runner'
+import { transcribeAudio } from '../../services/transcription/whisperx-runner'
 import { jobStore } from './job-store'
 
 describe('runImport', () => {
   beforeEach(() => jest.clearAllMocks())
+
+  it('rssUrl オプション指定時は該当ポッドキャストのみ処理する', async () => {
+    jest.mocked(PodcastRepository).mockImplementationOnce(
+      () =>
+        ({
+          findMany: jest.fn().mockResolvedValue([
+            { id: 1, rssUrl: 'https://target.com/rss', title: 'Target' },
+            { id: 2, rssUrl: 'https://other.com/rss', title: 'Other' }
+          ])
+        }) as any
+    )
+    jest.mocked(fetchRssEpisodes).mockResolvedValue([])
+
+    const { runImport } = await import('./import-podcast.usecase')
+    await runImport({ rssUrl: 'https://target.com/rss' })
+
+    expect(fetchRssEpisodes).toHaveBeenCalledTimes(1)
+    expect(fetchRssEpisodes).toHaveBeenCalledWith('https://target.com/rss')
+  })
 
   it('rssUrl がないポッドキャストはスキップする', async () => {
     jest.mocked(PodcastRepository).mockImplementationOnce(
@@ -237,5 +260,63 @@ describe('runImport', () => {
 
     expect(downloadAudio).not.toHaveBeenCalled()
     expect(jobStore.incrementDone).toHaveBeenCalled()
+  })
+
+  it('whisperx-runner の transcribeAudio に personalities を渡す', async () => {
+    const mockPersonality = {
+      id: 1,
+      name: 'ホスト',
+      description: null,
+      publicId: 'test-public-id',
+      audioSamples: []
+    }
+    jest.mocked(PodcastRepository).mockImplementationOnce(
+      () =>
+        ({
+          findMany: jest.fn().mockResolvedValue([{ id: 1, rssUrl: 'https://example.com/rss' }])
+        }) as any
+    )
+    jest.mocked(fetchRssEpisodes).mockResolvedValueOnce([
+      {
+        title: 'Ep1',
+        enclosureUrl: 'url',
+        audioUrl: 'https://ex.mp3',
+        publishedAt: null,
+        durationSec: null,
+        description: null
+      }
+    ])
+    jest.mocked(EpisodeRepository).mockImplementationOnce(
+      () =>
+        ({
+          upsertByEnclosureUrl: jest.fn().mockResolvedValue({ id: 10 })
+        }) as any
+    )
+    jest.mocked(PersonalityRepository).mockImplementationOnce(
+      () =>
+        ({
+          findPersonalitiesForTranscription: jest.fn().mockResolvedValue([mockPersonality])
+        }) as any
+    )
+    jest.mocked(TranscriptRepository).mockImplementationOnce(
+      () =>
+        ({
+          countByEpisodeId: jest.fn().mockResolvedValue(0),
+          bulkCreate: jest.fn(),
+          findByEpisodeId: jest.fn().mockResolvedValue([])
+        }) as any
+    )
+    jest.mocked(downloadAudio).mockResolvedValueOnce('/tmp/ep-10.mp3')
+    jest.mocked(transcribeAudio).mockResolvedValueOnce([])
+
+    const { runImport } = await import('./import-podcast.usecase')
+    await runImport()
+
+    expect(transcribeAudio).toHaveBeenCalledWith(
+      '/tmp/ep-10.mp3',
+      expect.objectContaining({
+        personalities: expect.arrayContaining([expect.objectContaining({ name: 'ホスト' })])
+      })
+    )
   })
 })

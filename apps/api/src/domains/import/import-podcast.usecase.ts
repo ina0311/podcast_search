@@ -1,5 +1,6 @@
 import {
   EpisodeRepository,
+  PersonalityRepository,
   PodcastRepository,
   TranscriptRepository
 } from '@podcast_search/database'
@@ -7,12 +8,13 @@ import { createSearchCoreFromEnv } from '@podcast_search/search-core'
 import logger from '../../lib/logger'
 import { fetchRssEpisodes, type RssEpisode } from '../../services/rss/rss-fetcher'
 import { deleteAudio, downloadAudio } from '../../services/transcription/audio-downloader'
-import { transcribeAudio } from '../../services/transcription/whisper-runner'
+import { transcribeAudio } from '../../services/transcription/whisperx-runner'
 import { jobStore } from './job-store'
 
-export async function runImport(): Promise<void> {
+export async function runImport(options?: { rssUrl?: string }): Promise<void> {
   const podcastRepo = new PodcastRepository()
   const episodeRepo = new EpisodeRepository()
+  const personalityRepo = new PersonalityRepository()
   const transcriptRepo = new TranscriptRepository()
   const searchCore = createSearchCoreFromEnv()
 
@@ -21,9 +23,12 @@ export async function runImport(): Promise<void> {
   const podcastsWithRss = podcasts.filter(
     (p): p is typeof p & { rssUrl: string } => p.rssUrl != null
   )
+  const targets = options?.rssUrl
+    ? podcastsWithRss.filter((p) => p.rssUrl === options.rssUrl)
+    : podcastsWithRss
 
   const allItems: { podcastId: number; ep: RssEpisode }[] = []
-  for (const podcast of podcastsWithRss) {
+  for (const podcast of targets) {
     try {
       const episodes = await fetchRssEpisodes(podcast.rssUrl)
       for (const ep of episodes) {
@@ -82,11 +87,23 @@ export async function runImport(): Promise<void> {
     }
 
     try {
-      // Whisper で文字起こし
-      const segments = await transcribeAudio(audioPath)
+      // WhisperX で文字起こし
+      const personalities = await personalityRepo.findPersonalitiesForTranscription({
+        podcastId,
+        episodeId: dbEpisodeId
+      })
+      const segments = await transcribeAudio(audioPath, { personalities })
 
       // DB に保存
-      await transcriptRepo.bulkCreate(segments.map((s) => ({ episodeId: dbEpisodeId, ...s })))
+      await transcriptRepo.bulkCreate(
+        segments.map((s) => ({
+          episodeId: dbEpisodeId,
+          text: s.text,
+          startMs: s.startMs,
+          endMs: s.endMs,
+          speakerLabel: s.speakerLabel ?? null
+        }))
+      )
 
       // Embedding → Qdrant
       const savedSegments = await transcriptRepo.findByEpisodeId(dbEpisodeId)
