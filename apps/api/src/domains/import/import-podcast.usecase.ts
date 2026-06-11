@@ -11,7 +11,7 @@ import { deleteAudio, downloadAudio } from '../../services/transcription/audio-d
 import { transcribeAudio } from '../../services/transcription/whisperx-runner'
 import { jobStore } from './job-store'
 
-export async function runImport(options?: { rssUrl?: string }): Promise<void> {
+export async function runImport(options?: { rssUrl?: string; podcastId?: number }): Promise<void> {
   const podcastRepo = new PodcastRepository()
   const episodeRepo = new EpisodeRepository()
   const personalityRepo = new PersonalityRepository()
@@ -23,9 +23,17 @@ export async function runImport(options?: { rssUrl?: string }): Promise<void> {
   const podcastsWithRss = podcasts.filter(
     (p): p is typeof p & { rssUrl: string } => p.rssUrl != null
   )
-  const targets = options?.rssUrl
-    ? podcastsWithRss.filter((p) => p.rssUrl === options.rssUrl)
-    : podcastsWithRss
+
+  let targets: { id: number; rssUrl: string }[]
+  if (options?.podcastId && options?.rssUrl) {
+    // 特定ポッドキャスト + 指定 URL でインポート（DB の rssUrl を上書き）
+    const podcast = podcasts.find((p) => p.id === options.podcastId)
+    targets = podcast ? [{ ...podcast, rssUrl: options.rssUrl }] : []
+  } else if (options?.rssUrl) {
+    targets = podcastsWithRss.filter((p) => p.rssUrl === options.rssUrl)
+  } else {
+    targets = podcastsWithRss
+  }
 
   const allItems: { podcastId: number; ep: RssEpisode }[] = []
   for (const podcast of targets) {

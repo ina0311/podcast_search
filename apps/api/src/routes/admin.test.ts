@@ -43,6 +43,42 @@ describe('admin routes', () => {
       expect(body).toHaveProperty('jobId')
     })
 
+    it('rssUrl を指定した場合も 202 を返し runImport に rssUrl を渡す', async () => {
+      jest.mocked(jobStore.getState).mockReturnValueOnce({
+        status: 'idle',
+        total: 0,
+        done: 0,
+        errors: []
+      })
+
+      const res = await app.request('/admin/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rssUrl: 'https://example.com/feed.xml' })
+      })
+
+      expect(res.status).toBe(202)
+      expect(runImport).toHaveBeenCalledWith({ rssUrl: 'https://example.com/feed.xml' })
+    })
+
+    it('不正な rssUrl は 400 を返す', async () => {
+      jest.mocked(jobStore.getState).mockReturnValueOnce({
+        status: 'idle',
+        total: 0,
+        done: 0,
+        errors: []
+      })
+
+      const res = await app.request('/admin/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rssUrl: 'not-a-url' })
+      })
+
+      expect(res.status).toBe(400)
+      expect(runImport).not.toHaveBeenCalled()
+    })
+
     it('実行中のときは 409 を返す', async () => {
       jest.mocked(jobStore.getState).mockReturnValueOnce({
         status: 'running',
