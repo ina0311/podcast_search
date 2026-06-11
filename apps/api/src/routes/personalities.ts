@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
 import { deleteAudioSample, uploadAudioSample } from '../lib/supabase'
+import { adminAuth } from '../middleware/auth'
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -11,6 +12,7 @@ const createSchema = z.object({
 const updateSchema = createSchema.partial()
 
 const router = new Hono()
+  .use('*', adminAuth)
   .get('/', async (c) => {
     const repo = new PersonalityRepository()
     return c.json(await repo.findMany())
@@ -43,7 +45,11 @@ const router = new Hono()
       .safeParse(raw)
     if (!parsed.success) return c.json({ error: 'Invalid body' }, 400)
     const repo = new PersonalityRepository()
-    await repo.addToPodcast(parsed.data.personalityId, podcastId, parsed.data.role)
+    try {
+      await repo.addToPodcast(parsed.data.personalityId, podcastId, parsed.data.role)
+    } catch {
+      return c.json({ error: 'Podcast or Personality not found' }, 404)
+    }
     return c.body(null, 204)
   })
   .delete('/by-podcast/:podcastId/:personalityId', async (c) => {
@@ -62,7 +68,11 @@ const router = new Hono()
       .safeParse(raw)
     if (!parsed.success) return c.json({ error: 'Invalid body' }, 400)
     const repo = new PersonalityRepository()
-    await repo.addToEpisode(parsed.data.personalityId, episodeId, parsed.data.role)
+    try {
+      await repo.addToEpisode(parsed.data.personalityId, episodeId, parsed.data.role)
+    } catch {
+      return c.json({ error: 'Episode or Personality not found' }, 404)
+    }
     return c.body(null, 204)
   })
   .delete('/by-episode/:episodeId/:personalityId', async (c) => {

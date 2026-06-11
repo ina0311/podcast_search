@@ -3,6 +3,7 @@ import { env } from '@podcast_search/config'
 import { Hono } from 'hono'
 import { compress } from 'hono/compress'
 import { cors } from 'hono/cors'
+import { HTTPException } from 'hono/http-exception'
 import { secureHeaders } from 'hono/secure-headers'
 import logger from './lib/logger'
 
@@ -29,7 +30,6 @@ const allowedOrigins = env.ALLOWED_ORIGINS
   : ['http://localhost:5173', 'http://localhost:8080'] // 開発環境のデフォルト
 
 app.use('/admin/*', adminAuth)
-app.use('/personalities/*', adminAuth)
 app.use(
   '*',
   cors({
@@ -43,6 +43,9 @@ app.use('*', secureHeaders())
 
 app.notFound((c) => c.json({ error: 'Not Found' }, 404))
 app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return c.json({ error: err.message }, err.status)
+  }
   logger.error({ err }, 'Unhandled error')
   return c.json({ error: 'Internal Server Error' }, 500)
 })
