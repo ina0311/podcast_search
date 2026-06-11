@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { NavLink, Route, Routes } from 'react-router-dom'
+import AddEpisode from './pages/AddEpisode'
 import EpisodeDetail from './pages/EpisodeDetail'
 import EpisodeList from './pages/EpisodeList'
 import PersonalityDetail from './pages/PersonalityDetail'
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/podcasts" element={<PodcastList />} />
             <Route path="/podcasts/:id" element={<PodcastDetail />} />
+            <Route path="/podcasts/:id/add-episode" element={<AddEpisode />} />
             <Route path="/episodes" element={<EpisodeList />} />
             <Route path="/episodes/:id" element={<EpisodeDetail />} />
             <Route path="/personalities" element={<PersonalityList />} />
