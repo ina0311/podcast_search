@@ -1,20 +1,10 @@
-#!/usr/bin/env python3
 """
 WhisperX transcription with speaker diarization and identification.
-
-Usage:
-    python whisperx_transcribe.py \
-        --audio /tmp/ep.mp3 \
-        --output /tmp/result.json \
-        --hf_token hf_xxx \
-        [--personalities '[{"name":"山田","embedding":[0.1,0.2,...]}]'] \
-        [--num_speakers 2]
+Provides run_transcription() for use as a library (called by main.py).
 """
 
-import argparse
-import json
 import sys
-from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import whisperx
@@ -36,11 +26,6 @@ def resolve_speaker_names(
     hf_token: str,
     threshold: float = 0.85,
 ) -> dict[str, str]:
-    """
-    diarize_segments: pyannote の diarization 出力
-    personalities: [{"name": str, "embedding": list[float]}, ...]
-    Returns: {"SPEAKER_00": "山田太郎", "SPEAKER_01": "ゲスト佐藤"} など
-    """
     personalities_with_emb = [p for p in personalities if p.get("embedding")]
     if not personalities_with_emb:
         return {}
@@ -81,24 +66,20 @@ def resolve_speaker_names(
     return mapping
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--audio", required=True)
-    parser.add_argument("--output", required=True)
-    parser.add_argument("--hf_token", default="")
-    parser.add_argument("--personalities", default="[]")
-    parser.add_argument("--num_speakers", type=int, default=None)
-    parser.add_argument("--model", default="turbo")
-    args = parser.parse_args()
-
-    personalities: list[dict] = json.loads(args.personalities)
-
-    audio = whisperx.load_audio(args.audio)
-
+def run_transcription(
+    audio_path: str,
+    personalities: list[dict],
+    num_speakers: Optional[int],
+    model: str = "turbo",
+    hf_token: str = "",
+) -> list[dict]:
     device = "cpu"
     compute_type = "int8"
-    model = whisperx.load_model(args.model, device, compute_type=compute_type)
-    result = model.transcribe(audio, batch_size=16)
+
+    audio = whisperx.load_audio(audio_path)
+
+    whisper_model = whisperx.load_model(model, device, compute_type=compute_type)
+    result = whisper_model.transcribe(audio, batch_size=16)
 
     model_a, metadata = whisperx.load_align_model(
         language_code=result["language"], device=device
@@ -108,20 +89,20 @@ def main():
     )
 
     diarize_model = whisperx.DiarizationPipeline(
-        use_auth_token=args.hf_token, device=device
+        use_auth_token=hf_token, device=device
     )
     diarize_segments = diarize_model(
-        args.audio,
+        audio_path,
         min_speakers=1,
-        max_speakers=args.num_speakers if args.num_speakers else 10,
+        max_speakers=num_speakers if num_speakers else 10,
     )
     result = whisperx.assign_word_speakers(diarize_segments, result)
 
     speaker_map: dict[str, str] = {}
-    if args.hf_token and personalities:
+    if hf_token and personalities:
         try:
             speaker_map = resolve_speaker_names(
-                args.audio, diarize_segments, personalities, args.hf_token
+                audio_path, diarize_segments, personalities, hf_token
             )
         except Exception as e:
             print(f"[whisperx] Speaker identification failed (non-fatal): {e}", file=sys.stderr)
@@ -139,8 +120,4 @@ def main():
             }
         )
 
-    Path(args.output).write_text(json.dumps(segments_out, ensure_ascii=False), encoding="utf-8")
-
-
-if __name__ == "__main__":
-    main()
+    return segments_out

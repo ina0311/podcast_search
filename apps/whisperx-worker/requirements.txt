@@ -1,0 +1,6 @@
+whisperx
+pyannote.audio>=3.3
+pyannote.core>=5.0
+numpy
+fastapi>=0.111
+uvicorn[standard]>=0.30

@@ -8,6 +8,23 @@ services:
   # ---------------------------------------------------------------------------
   # Application Services
   # ---------------------------------------------------------------------------
+  whisperx-worker:
+    build:
+      context: apps/whisperx-worker
+      dockerfile: Dockerfile
+    container_name: podcast_whisperx
+    profiles: [backend]
+    environment:
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+    volumes:
+      - audio_tmp:/tmp/podcast-ingestion
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+
   api:
     build:
       context: .
@@ -17,6 +34,7 @@ services:
     profiles: [backend]
     depends_on:
       qdrant: { condition: service_healthy }
+      whisperx-worker: { condition: service_healthy }
     environment:
       CI: "true"
       NODE_ENV: development
@@ -24,11 +42,14 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:54322/postgres
       QDRANT_URL: http://qdrant:6333
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-dummy-key-for-development}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+      WHISPERX_SERVICE_URL: http://whisperx-worker:8080
     ports: ["3000:3000"]
     volumes:
       - .:/app
       - node_modules:/app/node_modules
       - pnpm_store:/pnpm/store
+      - audio_tmp:/tmp/podcast-ingestion
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 10s
@@ -42,6 +63,7 @@ services:
       dockerfile: apps/admin-ui/Dockerfile
       target: dev
     container_name: podcast_admin_ui
+    init: true
     profiles: [backend]
     depends_on:
       api: { condition: service_healthy }
@@ -120,3 +142,4 @@ volumes:
   qdrant_data:
   node_modules:
   pnpm_store:
+  audio_tmp:

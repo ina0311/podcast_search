@@ -28,7 +28,8 @@ const EnvSchema = z.object({
   ALLOWED_ORIGINS: z.string().optional(),
 
   // WhisperX 話者識別設定
-  HUGGINGFACE_TOKEN: z.string().optional()
+  HUGGINGFACE_TOKEN: z.string().optional(),
+  WHISPERX_SERVICE_URL: z.string().url().default('http://localhost:8080')
 })
 
 export type Env = z.infer<typeof EnvSchema>
