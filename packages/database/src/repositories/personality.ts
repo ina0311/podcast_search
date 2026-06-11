@@ -5,6 +5,8 @@ export type PersonalityWithSamples = Personality & {
   audioSamples: PersonalityAudioSample[]
 }
 
+export type PersonalityWithRole = PersonalityWithSamples & { role: string | null }
+
 export interface CreatePersonalityInput {
   name: string
   description?: string | null
@@ -32,12 +34,12 @@ export class PersonalityRepository extends BaseRepository {
     })
   }
 
-  async findByPodcastId(podcastId: number): Promise<PersonalityWithSamples[]> {
+  async findByPodcastId(podcastId: number): Promise<PersonalityWithRole[]> {
     const rows = await this.db.personalityPodcast.findMany({
       where: { podcastId },
       include: { personality: { include: { audioSamples: true } } }
     })
-    return rows.map((r) => r.personality)
+    return rows.map((r) => ({ ...r.personality, role: r.role }))
   }
 
   async findByEpisodeId(episodeId: number): Promise<PersonalityWithSamples[]> {
@@ -54,7 +56,8 @@ export class PersonalityRepository extends BaseRepository {
   }): Promise<PersonalityWithSamples[]> {
     const episodePersonalities = await this.findByEpisodeId(opts.episodeId)
     if (episodePersonalities.length > 0) return episodePersonalities
-    return this.findByPodcastId(opts.podcastId)
+    const withRole = await this.findByPodcastId(opts.podcastId)
+    return withRole.map(({ role: _role, ...p }) => p)
   }
 
   async create(input: CreatePersonalityInput): Promise<Personality> {
