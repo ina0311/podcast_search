@@ -40,7 +40,9 @@
       "@prisma/client",
       "@prisma/engines",
       "prisma",
-      "esbuild"
+      "esbuild",
+      "supabase",
+      "unrs-resolver"
     ]
   },
   "devDependencies": {
