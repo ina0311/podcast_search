@@ -12,6 +12,7 @@ export interface Personality {
   name: string
   description: string | null
   audioSamples: { id: number; publicId: string; storageUrl: string }[]
+  role?: string | null
 }
 
 export const fetchPersonalities = async (): Promise<Personality[]> => {

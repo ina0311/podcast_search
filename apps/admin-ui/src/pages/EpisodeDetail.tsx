@@ -63,9 +63,16 @@ export default function EpisodeDetail() {
 
   return (
     <div>
-      <Link to="/episodes" className="text-blue-600 hover:underline mb-4 inline-block">
-        ← Episode 一覧に戻る
-      </Link>
+      <div className="flex gap-4 mb-4">
+        <Link to="/episodes" className="text-blue-600 hover:underline">
+          ← Episode 一覧
+        </Link>
+        {episode.podcastId && (
+          <Link to={`/podcasts/${episode.podcastId}`} className="text-blue-600 hover:underline">
+            Podcast 詳細
+          </Link>
+        )}
+      </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">{episode.title}</h2>
@@ -105,12 +112,8 @@ export default function EpisodeDetail() {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">出演者</h3>
-          <span className="text-xs text-gray-500">
-            {episodePersonalities.length === 0 ? '（番組デフォルトを使用）' : 'エピソード個別設定'}
-          </span>
-        </div>
+        <h3 className="text-lg font-semibold mb-1">ゲスト出演者</h3>
+        <p className="text-xs text-gray-500 mb-3">この回のみ出演するゲストを設定します</p>
         <div className="flex flex-wrap gap-2 mb-3">
           {episodePersonalities.map((p) => (
             <span
@@ -127,6 +130,9 @@ export default function EpisodeDetail() {
               </button>
             </span>
           ))}
+          {episodePersonalities.length === 0 && (
+            <span className="text-sm text-gray-500">ゲストなし</span>
+          )}
         </div>
         <select
           onChange={(e) => {
@@ -139,7 +145,7 @@ export default function EpisodeDetail() {
           defaultValue=""
         >
           <option value="" disabled>
-            + この回の出演者を追加
+            + ゲストを追加
           </option>
           {allPersonalities
             .filter((p) => !episodePersonalities.some((ep) => ep.id === p.id))
